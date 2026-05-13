@@ -8,6 +8,7 @@ export async function GET() {
     const { data, error } = await supabase
       .from('stock_status')
       .select('*')
+      .in('platform', ['amazon', 'flipkart', 'croma', 'vijaysales', 'reliancedigital'])
       .order('platform', { ascending: true });
 
     if (error) throw error;

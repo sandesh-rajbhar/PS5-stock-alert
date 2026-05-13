@@ -3,7 +3,7 @@ import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 
 export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
-  const searchUrl = 'https://www.amazon.in/s?k=Sony+PlayStation+5+Console&rh=p_n_availability%3A1318485031';
+  const searchUrl = 'https://www.amazon.in/s?k=Sony+PlayStation+5+Console+Slim+Digital+Disc+Bundle&rh=p_n_availability%3A1318485031';
   const addressUrl = 'https://www.amazon.in/gp/delivery/ajax/address-change.html';
   
   try {
@@ -47,20 +47,35 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     
     const results = $('[data-component-type="s-search-result"]');
     let bestMatch: any = null;
+    let matchCount = 0;
 
     results.each((_, el) => {
-      const title = $(el).find('h2 span').text().toLowerCase();
+      const title = $(el).find('h2 span').text();
+      const titleLower = title.toLowerCase();
+      const isPS5 = (titleLower.includes('ps5') || titleLower.includes('5')) && 
+                    (titleLower.includes('sony') || titleLower.includes('playstation'));
       
-      // Console check
-      const isPS5 = (title.includes('ps5') || title.includes('5')) && 
-                    (title.includes('sony') || title.includes('playstation'));
-      const isConsole = title.includes('console') || title.includes('slim') || title.includes('bundle');
+      // Must include at least one of these to be a console
+      const hasConsoleKeywords = titleLower.includes('console') || titleLower.includes('slim') || 
+                                 titleLower.includes('digital edition') || titleLower.includes('disc edition');
       
-      const isAccessory = title.includes('compatible') || title.includes('stand') || title.includes('hub') || 
-                          title.includes('cooling') || title.includes('fan') || title.includes('controller') || 
-                          title.includes('dualsense') || title.includes('skin') || title.includes('cover');
+      // Strict exclusion list
+      const isForbidden = titleLower.includes('vr2') || 
+                          titleLower.includes('headset') || 
+                          titleLower.includes('camera') || 
+                          titleLower.includes('controller') || 
+                          titleLower.includes('dualsense') || 
+                          titleLower.includes('charging station') || 
+                          titleLower.includes('remote') || 
+                          titleLower.includes('stand') || 
+                          titleLower.includes('cover') || 
+                          titleLower.includes('skin') || 
+                          titleLower.includes('stickers') ||
+                          titleLower.includes('mount') ||
+                          titleLower.includes('cable');
 
-      if (isPS5 && isConsole && !isAccessory) {
+      if (isPS5 && hasConsoleKeywords && !isForbidden) {
+        matchCount++;
         const text = $(el).text();
         const isOutOfStock = text.includes('Currently unavailable') || text.includes('out of stock') || 
                             text.includes('Cannot be delivered to this location');
@@ -93,6 +108,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
       price: bestMatch.price,
       productUrl,
       productName: bestMatch.title,
+      listingCount: matchCount,
     };
   } catch (error) {
     console.error('Amazon localized scraping error:', error);

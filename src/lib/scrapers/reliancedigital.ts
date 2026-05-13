@@ -20,6 +20,7 @@ export async function scrapeRelianceDigital(pincode: string): Promise<ScrapeResu
     
     const results = $('.sp__product');
     let bestMatch: any = null;
+    let matchCount = 0;
 
     results.each((_, el) => {
       const title = $(el).find('.sp__name').text().trim();
@@ -31,6 +32,7 @@ export async function scrapeRelianceDigital(pincode: string): Promise<ScrapeResu
       const isAccessory = titleLower.includes('controller') || titleLower.includes('dualsense') || titleLower.includes('charging station') || titleLower.includes('remote') || titleLower.includes('cover') || titleLower.includes('camera');
 
       if (isPS5 && isConsole && !isAccessory) {
+        matchCount++;
         const price = $(el).find('.sc-bxivhb').first().text().trim();
         const isOutOfStock = $(el).text().includes('Out of Stock') || $(el).find('.btn-notify').length > 0;
 
@@ -61,6 +63,7 @@ export async function scrapeRelianceDigital(pincode: string): Promise<ScrapeResu
       price: bestMatch.price,
       productUrl,
       productName: bestMatch.title || 'PS5 Console',
+      listingCount: matchCount,
     };
   } catch (error) {
     console.error('Reliance Digital scraping error:', error);

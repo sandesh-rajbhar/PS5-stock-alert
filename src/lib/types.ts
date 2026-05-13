@@ -5,6 +5,7 @@ export interface ScrapeResult {
   price: string | null;
   productUrl: string;
   productName: string;
+  listingCount?: number;
   error?: boolean;
   deliveryTime?: string; // For Blinkit/Zepto
 }

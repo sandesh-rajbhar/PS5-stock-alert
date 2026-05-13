@@ -62,6 +62,7 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
     const searchData = await searchResponse.json() as { products?: ZeptoProduct[] };
     const products = searchData.products || [];
     let bestMatch: any = null;
+    let matchCount = 0;
 
     for (const p of products) {
       const name = p.name.toLowerCase();
@@ -72,6 +73,7 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
                           name.includes('remote') || name.includes('cover') || name.includes('stand') || name.includes('headset');
 
       if (isPS5 && (isConsole || !isAccessory)) {
+        matchCount++;
         if (p.is_available) {
           if (!bestMatch || !bestMatch.is_available) {
             bestMatch = p;
@@ -89,6 +91,7 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
         productUrl: `https://www.zeptonow.com/pn/${bestMatch.slug}/pids/${bestMatch.id}`,
         productName: bestMatch.name,
         deliveryTime: bestMatch.eta_minutes ? `${bestMatch.eta_minutes} mins` : '15 mins',
+        listingCount: matchCount,
       };
     }
 

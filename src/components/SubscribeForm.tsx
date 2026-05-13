@@ -10,6 +10,7 @@ type CheckResult = {
   price: string | null;
   productUrl: string;
   deliveryTime?: string;
+  listingCount?: number;
 };
 
 export default function SubscribeForm() {
@@ -117,7 +118,14 @@ export default function SubscribeForm() {
           <div className="space-y-3 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {checkResults.map((result) => (
               <div key={result.platform} className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-gray-100 bg-gray-50">
-                <span className="font-bold text-xs sm:text-sm">{result.platform}</span>
+                <div className="flex flex-col">
+                  <span className="font-bold text-xs sm:text-sm">{result.platform}</span>
+                  {result.listingCount && result.listingCount > 0 && (
+                    <span className="text-[8px] font-medium text-gray-400 uppercase tracking-tighter">
+                      Scanned {result.listingCount} listings
+                    </span>
+                  )}
+                </div>
                 <span className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-1 rounded ${result.inStock ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-400'}`}>
                   {result.inStock ? 'Available' : 'No Stock'}
                 </span>

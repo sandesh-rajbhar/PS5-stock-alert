@@ -20,6 +20,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
     
     const results = $('.vsprod-list-tile');
     let bestMatch: any = null;
+    let matchCount = 0;
 
     results.each((_, el) => {
       const title = $(el).find('.vsprod-title').text().trim();
@@ -31,6 +32,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
       const isAccessory = titleLower.includes('controller') || titleLower.includes('dualsense') || titleLower.includes('charging station') || titleLower.includes('remote') || titleLower.includes('cover') || titleLower.includes('stickers');
 
       if (isPS5 && isConsole && !isAccessory) {
+        matchCount++;
         const price = $(el).find('.vsprod-price').first().text().trim();
         const isOutOfStock = $(el).text().includes('Out of Stock') || $(el).find('.btn-notify-me').length > 0;
 
@@ -61,6 +63,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
       price: bestMatch.price,
       productUrl,
       productName: bestMatch.title || 'PS5 Console',
+      listingCount: matchCount,
     };
   } catch (error) {
     console.error('Vijay Sales scraping error:', error);

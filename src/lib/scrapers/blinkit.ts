@@ -58,6 +58,7 @@ export async function scrapeBlinkit(pincode: string): Promise<ScrapeResult> {
     const data = await response.json() as { products?: BlinkitProduct[] };
     const products = data.products || [];
     let bestMatch: any = null;
+    let matchCount = 0;
     
     // Find PS5 console in results - Scan all and prioritize in-stock
     for (const p of products) {
@@ -68,6 +69,7 @@ export async function scrapeBlinkit(pincode: string): Promise<ScrapeResult> {
                           name.includes('remote') || name.includes('cover') || name.includes('stand') || name.includes('headset');
 
       if (isPS5 && (isConsole || !isAccessory)) {
+        matchCount++;
         if (p.inventory > 0) {
           if (!bestMatch || bestMatch.inventory === 0) {
             bestMatch = p;
@@ -85,6 +87,7 @@ export async function scrapeBlinkit(pincode: string): Promise<ScrapeResult> {
         productUrl: `https://blinkit.com/prn/x/prid/${bestMatch.id}`,
         productName: bestMatch.name,
         deliveryTime: bestMatch.eta || '10-20 mins',
+        listingCount: matchCount,
       };
     }
 

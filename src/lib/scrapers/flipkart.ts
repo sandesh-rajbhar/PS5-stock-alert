@@ -20,6 +20,7 @@ export async function scrapeFlipkart(pincode: string): Promise<ScrapeResult> {
     
     const results = $('[data-id]');
     let bestMatch: any = null;
+    let matchCount = 0;
 
     results.each((_, el) => {
       const title = $(el).find('a[title]').attr('title')?.toLowerCase() || '';
@@ -32,6 +33,7 @@ export async function scrapeFlipkart(pincode: string): Promise<ScrapeResult> {
                           title.includes('charging station') || title.includes('remote') || title.includes('cover');
 
       if (isConsole && !isAccessory) {
+        matchCount++;
         const isOutOfStock = text.includes('Sold Out') || text.includes('Currently unavailable') || text.includes('Not Deliverable');
         const price = $(el).find('div[class*="_30jeq3"]').first().text().trim();
 
@@ -65,6 +67,7 @@ export async function scrapeFlipkart(pincode: string): Promise<ScrapeResult> {
       price: bestMatch.price,
       productUrl,
       productName: bestMatch.title || 'PS5 Console',
+      listingCount: matchCount,
     };
   } catch (error) {
     console.error('Flipkart scraping error:', error);

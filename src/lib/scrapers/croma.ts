@@ -22,6 +22,7 @@ export async function scrapeCroma(pincode?: string): Promise<ScrapeResult> {
     
     const results = $('.product-item');
     let bestMatch: any = null;
+    let matchCount = 0;
 
     results.each((_, el) => {
       const title = $(el).find('.pdp-link a').text().trim();
@@ -33,6 +34,7 @@ export async function scrapeCroma(pincode?: string): Promise<ScrapeResult> {
       const isAccessory = titleLower.includes('controller') || titleLower.includes('dualsense') || titleLower.includes('charging station') || titleLower.includes('remote') || titleLower.includes('cover') || titleLower.includes('stickers') || titleLower.includes('headphones');
 
       if (isPS5 && isConsole && !isAccessory) {
+        matchCount++;
         const price = $(el).find('.amount').first().text().trim();
         const isOutOfStock = $(el).text().includes('Out of Stock') || 
                             $(el).find('.btn-not-available').length > 0 ||
@@ -65,6 +67,7 @@ export async function scrapeCroma(pincode?: string): Promise<ScrapeResult> {
       price: bestMatch.price,
       productUrl,
       productName: bestMatch.title || 'PS5 Console',
+      listingCount: matchCount,
     };
   } catch (error) {
     console.error('Croma scraping error:', error);
