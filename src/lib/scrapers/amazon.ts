@@ -3,7 +3,14 @@ import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 
 export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
-  const searchUrl = 'https://www.amazon.in/s?k=Sony+PlayStation+5+Console+Slim+Digital+Disc+Bundle&rh=p_n_availability%3A1318485031';
+  const productUrls = [
+    'https://www.amazon.in/Sony-PlaysStation-Console-Storage-Capacity/dp/B0CWH9WCWT',
+    'https://www.amazon.in/Sony-Ps5-Gaming-Console-Controllers/dp/B0DT9MQQC1',
+    'https://www.amazon.in/Sony-PlayStation%C2%AE5-Digital-Edition-slim/dp/B0CY5QW186',
+    'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0FNS22DLT',
+    'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0CY5HVDS2'
+  ];
+  
   const addressUrl = 'https://www.amazon.in/gp/delivery/ajax/address-change.html';
   
   try {
@@ -14,7 +21,6 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     };
 
     // Step 1: Set the Pincode via Amazon's internal address-change endpoint
-    // This allows the subsequent search to return results for that specific location
     const addressResponse = await fetch(addressUrl, {
       method: 'POST',
       headers,
@@ -23,90 +29,80 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         'zipCode': pincode,
         'storeContext': 'generic',
         'deviceType': 'web',
-        'pageType': 'Search',
+        'pageType': 'Detail',
         'actionSource': 'glow'
       })
     });
 
-    // Extract cookies from address change (simplified for node-fetch)
     const setCookie = addressResponse.headers.get('set-cookie') || '';
-
-    // Step 2: Search with the pincode-aware session
-    const response = await fetch(searchUrl, {
-      headers: {
-        ...headers,
-        'Cookie': setCookie,
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      },
-    });
-
-    if (!response.ok) throw new Error(`Amazon fetch failed: ${response.status}`);
-    
-    const html = await response.text();
-    const $ = cheerio.load(html);
-    
-    const results = $('[data-component-type="s-search-result"]');
     let bestMatch: any = null;
-    let matchCount = 0;
+    let matchCount = productUrls.length;
 
-    results.each((_, el) => {
-      const title = $(el).find('h2 span').text();
-      const titleLower = title.toLowerCase();
-      const isPS5 = (titleLower.includes('ps5') || titleLower.includes('5')) && 
-                    (titleLower.includes('sony') || titleLower.includes('playstation'));
-      
-      // Must include at least one of these to be a console
-      const hasConsoleKeywords = titleLower.includes('console') || titleLower.includes('slim') || 
-                                 titleLower.includes('digital edition') || titleLower.includes('disc edition');
-      
-      // Strict exclusion list
-      const isForbidden = titleLower.includes('vr2') || 
-                          titleLower.includes('headset') || 
-                          titleLower.includes('camera') || 
-                          titleLower.includes('controller') || 
-                          titleLower.includes('dualsense') || 
-                          titleLower.includes('charging station') || 
-                          titleLower.includes('remote') || 
-                          titleLower.includes('stand') || 
-                          titleLower.includes('cover') || 
-                          titleLower.includes('skin') || 
-                          titleLower.includes('stickers') ||
-                          titleLower.includes('mount') ||
-                          titleLower.includes('cable');
+    // Step 2: Fetch all product pages concurrently
+    const fetchPromises = productUrls.map(async (url) => {
+      try {
+        const response = await fetch(url, {
+          headers: { 
+            ...headers, 
+            'Cookie': setCookie, 
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8' 
+          },
+        });
+        
+        if (!response.ok) return null;
+        const html = await response.text();
+        const $ = cheerio.load(html);
+        
+        const title = $('#productTitle').text().trim();
+        if (!title) return null; // Captcha or invalid page
 
-      if (isPS5 && hasConsoleKeywords && !isForbidden) {
-        matchCount++;
-        const text = $(el).text();
-        const isOutOfStock = text.includes('Currently unavailable') || text.includes('out of stock') || 
-                            text.includes('Cannot be delivered to this location');
-        const price = $(el).find('.a-price-whole').first().text().trim();
+        const availabilityText = $('#availability').text().trim().toLowerCase();
+        const isOutOfStock = availabilityText.includes('currently unavailable') || 
+                             availabilityText.includes('out of stock') || 
+                             availabilityText.includes('cannot be delivered');
+        
+        const price = $('.a-price-whole').first().text().trim();
 
-        if (!isOutOfStock && price) {
-          if (!bestMatch || bestMatch.isOutOfStock) {
-             bestMatch = { el: $(el), isOutOfStock: false, price: `₹${price}`, title: $(el).find('h2 span').text().trim() };
-          }
-        } else if (!bestMatch) {
-          bestMatch = { el: $(el), isOutOfStock: true, price: price ? `₹${price}` : null, title: $(el).find('h2 span').text().trim() };
-        }
+        return {
+          title,
+          url,
+          price: price ? `₹${price}` : null,
+          isOutOfStock: isOutOfStock || !price
+        };
+      } catch (e) {
+        return null;
       }
     });
+
+    const results = await Promise.allSettled(fetchPromises);
+
+    // Evaluate results to find the best match (prioritizing in-stock)
+    for (const result of results) {
+      if (result.status === 'fulfilled' && result.value) {
+        const item = result.value;
+        if (!item.isOutOfStock && item.price) {
+          if (!bestMatch || bestMatch.isOutOfStock) {
+            bestMatch = item;
+          }
+        } else if (!bestMatch) {
+          bestMatch = item;
+        }
+      }
+    }
 
     if (!bestMatch) {
        return {
         inStock: false,
         price: null,
-        productUrl: searchUrl,
+        productUrl: productUrls[0],
         productName: 'PS5 Console',
       };
     }
 
-    const relativeUrl = bestMatch.el.find('h2 a').attr('href');
-    const productUrl = relativeUrl ? (relativeUrl.startsWith('http') ? relativeUrl : 'https://www.amazon.in' + relativeUrl) : searchUrl;
-
     return {
       inStock: !bestMatch.isOutOfStock,
       price: bestMatch.price,
-      productUrl,
+      productUrl: bestMatch.url,
       productName: bestMatch.title,
       listingCount: matchCount,
     };
@@ -115,7 +111,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     return {
       inStock: false,
       price: null,
-      productUrl: searchUrl,
+      productUrl: productUrls[0],
       productName: 'PS5 Console',
       error: true,
     };
