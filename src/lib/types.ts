@@ -1,4 +1,4 @@
-export type Platform = 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'blinkit' | 'zepto' | 'reliancedigital' | 'jiomart';
+export type Platform = 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'blinkit' | 'zepto' | 'reliancedigital';
 
 export interface ScrapeResult {
   inStock: boolean;

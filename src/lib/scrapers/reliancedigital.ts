@@ -2,13 +2,14 @@ import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 
-export async function scrapeRelianceDigital(): Promise<ScrapeResult> {
+export async function scrapeRelianceDigital(pincode: string): Promise<ScrapeResult> {
   const url = 'https://www.reliancedigital.in/search?q=ps5:relevance';
   
   try {
     const response = await fetch(url, {
       headers: {
         'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Cookie': `pincode=${pincode}`,
       },
     });
 
@@ -17,10 +18,33 @@ export async function scrapeRelianceDigital(): Promise<ScrapeResult> {
     const html = await response.text();
     const $ = cheerio.load(html);
     
-    const firstResult = $('.sp__product').first();
-    const title = firstResult.find('.sp__name').text().trim();
+    const results = $('.sp__product');
+    let bestMatch: any = null;
 
-    if (!title.toLowerCase().includes('ps5') && !title.toLowerCase().includes('playstation 5')) {
+    results.each((_, el) => {
+      const title = $(el).find('.sp__name').text().trim();
+      const titleLower = title.toLowerCase();
+
+      // Console/Bundle check
+      const isPS5 = titleLower.includes('ps5') || titleLower.includes('playstation 5');
+      const isConsole = titleLower.includes('console') || titleLower.includes('slim') || titleLower.includes('bundle') || titleLower.includes('edition');
+      const isAccessory = titleLower.includes('controller') || titleLower.includes('dualsense') || titleLower.includes('charging station') || titleLower.includes('remote') || titleLower.includes('cover') || titleLower.includes('camera');
+
+      if (isPS5 && isConsole && !isAccessory) {
+        const price = $(el).find('.sc-bxivhb').first().text().trim();
+        const isOutOfStock = $(el).text().includes('Out of Stock') || $(el).find('.btn-notify').length > 0;
+
+        if (!isOutOfStock && price) {
+          if (!bestMatch || bestMatch.isOutOfStock) {
+            bestMatch = { el: $(el), isOutOfStock: false, price, title };
+          }
+        } else if (!bestMatch) {
+          bestMatch = { el: $(el), isOutOfStock: true, price: price || null, title };
+        }
+      }
+    });
+
+    if (!bestMatch) {
        return {
         inStock: false,
         price: null,
@@ -29,16 +53,14 @@ export async function scrapeRelianceDigital(): Promise<ScrapeResult> {
       };
     }
 
-    const price = firstResult.find('.sc-bxivhb').first().text().trim();
-    const isOutOfStock = firstResult.text().includes('Out of Stock') || firstResult.find('.btn-notify').length > 0;
-    const relativeUrl = firstResult.find('a').first().attr('href');
-    const productUrl = relativeUrl ? 'https://www.reliancedigital.in' + relativeUrl : url;
+    const relativeUrl = bestMatch.el.find('a').first().attr('href');
+    const productUrl = relativeUrl ? (relativeUrl.startsWith('http') ? relativeUrl : 'https://www.reliancedigital.in' + relativeUrl) : url;
 
     return {
-      inStock: !isOutOfStock && !!price,
-      price: price || null,
+      inStock: !bestMatch.isOutOfStock,
+      price: bestMatch.price,
       productUrl,
-      productName: title || 'PS5 Console',
+      productName: bestMatch.title || 'PS5 Console',
     };
   } catch (error) {
     console.error('Reliance Digital scraping error:', error);

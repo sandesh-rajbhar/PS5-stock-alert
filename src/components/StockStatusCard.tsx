@@ -2,62 +2,68 @@
 
 import { StockStatus } from '@/lib/types';
 import { trackEvent } from '@/lib/analytics';
+import { ExternalLink, Check, X, MapPin } from 'lucide-react';
 
 interface Props {
   status: StockStatus;
 }
 
 export default function StockStatusCard({ status }: Props) {
-  const isQuickCommerce = ['blinkit', 'zepto'].includes(status.platform);
-  
+  const isAvailable = status.in_stock;
+
   return (
-    <div className="bg-white p-5 rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition">
-      <div className="flex justify-between items-start mb-4">
-        <div>
-          <h3 className="font-bold text-lg capitalize text-gray-800">{status.platform}</h3>
-          <p className="text-xs text-gray-400">
-            Last checked: {new Date(status.last_checked).toLocaleTimeString()}
-          </p>
+    <div className={`ps-card overflow-hidden flex flex-col h-full transition-transform hover:-translate-y-1 duration-300 ${!isAvailable && 'bg-gray-50/80'}`}>
+      {/* Retailer Info */}
+      <div className="p-5 sm:p-6 flex-1">
+        <div className="flex justify-between items-start gap-4 mb-6">
+          <div className="min-w-0">
+            <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight truncate">{status.platform}</h3>
+            <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest whitespace-nowrap">
+              Checked {new Date(status.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+            </p>
+          </div>
+          <div className={`status-pill shrink-0 ${
+            isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+          }`}>
+            {isAvailable ? (
+              <span className="flex items-center"><Check className="w-3 h-3 mr-1" /> Stock</span>
+            ) : (
+              <span className="flex items-center"><X className="w-3 h-3 mr-1" /> Out</span>
+            )}
+          </div>
         </div>
-        <div className={`px-2 py-1 rounded text-xs font-bold uppercase ${
-          status.in_stock ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
-        }`}>
-          {status.in_stock ? 'In Stock' : 'Out of Stock'}
+
+        <div className="space-y-2">
+          <p className="text-gray-500 text-sm font-medium line-clamp-2 min-h-[2.5rem]">{status.product_name || 'PS5 Standard Edition'}</p>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900">{status.price || '---'}</div>
+        </div>
+        
+        <div className="mt-5 flex items-center text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg w-fit uppercase tracking-wider">
+          <MapPin className="w-3 h-3 mr-1.5" />
+          Local Area Stock
         </div>
       </div>
 
-      <div className="mb-4">
-        <p className="text-sm font-medium text-gray-700 line-clamp-1">
-          {status.product_name || 'PS5 Console'}
-        </p>
-        <p className="text-xl font-bold text-gray-900 mt-1">
-          {status.price || '---'}
-        </p>
+      {/* Action */}
+      <div className="p-5 sm:p-6 pt-0">
+        <a
+          href={status.product_url}
+          target="_blank"
+          rel="noopener noreferrer"
+          onClick={() => trackEvent('buy_click', { platform: status.platform })}
+          className={`w-full ps-button py-3.5 sm:py-4 text-sm sm:text-base ${
+            isAvailable 
+              ? 'ps-button-primary' 
+              : 'bg-gray-200 text-gray-400 cursor-not-allowed pointer-events-none'
+          }`}
+        >
+          {isAvailable ? (
+            <>Buy Now <ExternalLink className="w-4 h-4 ml-2" /></>
+          ) : (
+            'Not Available'
+          )}
+        </a>
       </div>
-
-      {isQuickCommerce && (
-        <div className="mb-4 px-3 py-2 bg-blue-50 rounded-lg">
-          <p className="text-xs text-blue-700 font-medium flex items-center">
-            <span className="mr-1">📍</span> Stock varies by pincode
-          </p>
-        </div>
-      )}
-
-      <a
-        href={status.product_url}
-        target="_blank"
-        rel="noopener noreferrer"
-        onClick={() => {
-           trackEvent('buy_click', { platform: status.platform });
-        }}
-        className={`w-full block text-center py-2 rounded-lg font-semibold transition ${
-          status.in_stock 
-            ? 'bg-blue-600 text-white hover:bg-blue-700 shadow-sm' 
-            : 'bg-gray-100 text-gray-400 cursor-not-allowed pointer-events-none'
-        }`}
-      >
-        {status.in_stock ? 'Buy Now →' : 'Out of Stock'}
-      </a>
     </div>
   );
 }

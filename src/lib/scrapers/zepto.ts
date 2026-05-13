@@ -6,7 +6,7 @@ async function geocodePincode(pincode: string): Promise<{ lat: string; lon: stri
     const url = `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=India&format=json`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'PS5StockAlertIndia/1.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
     const data = await response.json() as { lat: string; lon: string }[];
@@ -31,7 +31,7 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
       headers: {
         'lat': coords.lat,
         'lon': coords.lon,
-        'User-Agent': 'Mozilla/5.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
     
@@ -44,7 +44,7 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
     // 2. Search products
     const searchResponse = await fetch(`https://api.zeptonow.com/api/v2/search/?query=ps5&store_id=${storeId}`, {
       headers: {
-        'User-Agent': 'Mozilla/5.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
 
@@ -61,18 +61,34 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
 
     const searchData = await searchResponse.json() as { products?: ZeptoProduct[] };
     const products = searchData.products || [];
+    let bestMatch: any = null;
 
-    const ps5 = products.find((p) => 
-      p.name.toLowerCase().includes('ps5') || p.name.toLowerCase().includes('playstation 5')
-    );
+    for (const p of products) {
+      const name = p.name.toLowerCase();
+      // Console/Bundle check
+      const isPS5 = name.includes('ps5') || name.includes('playstation 5');
+      const isConsole = name.includes('console') || name.includes('slim') || name.includes('bundle') || name.includes('edition');
+      const isAccessory = name.includes('controller') || name.includes('dualsense') || name.includes('disk drive') || 
+                          name.includes('remote') || name.includes('cover') || name.includes('stand') || name.includes('headset');
 
-    if (ps5) {
+      if (isPS5 && (isConsole || !isAccessory)) {
+        if (p.is_available) {
+          if (!bestMatch || !bestMatch.is_available) {
+            bestMatch = p;
+          }
+        } else if (!bestMatch) {
+          bestMatch = p;
+        }
+      }
+    }
+
+    if (bestMatch) {
       return {
-        inStock: ps5.is_available,
-        price: ps5.mrp ? `₹${ps5.mrp}` : null,
-        productUrl: `https://www.zeptonow.com/pn/${ps5.slug}/pids/${ps5.id}`,
-        productName: ps5.name,
-        deliveryTime: ps5.eta_minutes ? `${ps5.eta_minutes} mins` : '15 mins',
+        inStock: bestMatch.is_available,
+        price: bestMatch.mrp ? `₹${bestMatch.mrp}` : null,
+        productUrl: `https://www.zeptonow.com/pn/${bestMatch.slug}/pids/${bestMatch.id}`,
+        productName: bestMatch.name,
+        deliveryTime: bestMatch.eta_minutes ? `${bestMatch.eta_minutes} mins` : '15 mins',
       };
     }
 
