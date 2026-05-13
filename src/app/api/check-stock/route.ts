@@ -5,7 +5,6 @@ import { scrapeFlipkart } from '@/lib/scrapers/flipkart';
 import { scrapeCroma } from '@/lib/scrapers/croma';
 import { scrapeVijaySales } from '@/lib/scrapers/vijaysales';
 import { scrapeRelianceDigital } from '@/lib/scrapers/reliancedigital';
-import { scrapeJioMart } from '@/lib/scrapers/jiomart';
 import { scrapeBlinkit } from '@/lib/scrapers/blinkit';
 import { scrapeZepto } from '@/lib/scrapers/zepto';
 import { sendStockAlert } from '@/lib/notifier';
@@ -13,8 +12,9 @@ import { Platform, ScrapeResult } from '@/lib/types';
 
 export const maxDuration = 60; // Extend timeout for hobby plan (if possible) or just stay efficient
 
-async function handleStandardPlatform(platform: Platform, scrapeFn: () => Promise<ScrapeResult>) {
-  const result = await scrapeFn();
+async function handleStandardPlatform(platform: Platform, scrapeFn: (pincode: string) => Promise<ScrapeResult>) {
+  const defaultPincode = '110001'; // Delhi
+  const result = await scrapeFn(defaultPincode);
   if (result.error) return;
 
   // Get previous status
@@ -140,9 +140,11 @@ async function handleQuickCommerce(pincode: string) {
 
 export async function GET(request: Request) {
   const { searchParams } = new URL(request.url);
-  const secret = searchParams.get('secret') || request.headers.get('Authorization')?.replace('Bearer ', '');
+  const secret = searchParams.get('secret');
+  const authHeader = request.headers.get('Authorization');
+  const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
-  if (secret !== process.env.CRON_SECRET) {
+  if (secret !== process.env.CRON_SECRET && bearerToken !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
   }
 
@@ -154,7 +156,6 @@ export async function GET(request: Request) {
       handleStandardPlatform('croma', scrapeCroma),
       handleStandardPlatform('vijaysales', scrapeVijaySales),
       handleStandardPlatform('reliancedigital', scrapeRelianceDigital),
-      handleStandardPlatform('jiomart', scrapeJioMart),
     ]);
 
     // 2. Check Quick Commerce for Unique Pincodes

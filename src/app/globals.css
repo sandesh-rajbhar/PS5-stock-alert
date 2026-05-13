@@ -1,26 +1,71 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+@theme {
+  --color-ps-blue: #00439c;
+  --color-ps-black: #000000;
+  --color-ps-white: #ffffff;
+  --color-ps-gray: #f2f2f2;
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
-
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+@layer base {
+  body {
+    background-color: white;
+    color: black;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+@layer components {
+  .ps-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 1.25rem 2rem; /* Increased for mobile touch */
+    border-radius: 1rem; /* More modern rounded square for mobile */
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: all 0.2s ease;
+    width: 100%;
+  }
+  
+  .ps-button:active {
+    transform: scale(0.96);
+  }
+  
+  .ps-button-primary {
+    background-color: var(--color-ps-blue);
+    color: white;
+    box-shadow: 0 10px 15px -3px rgba(0, 67, 156, 0.3);
+  }
+
+  .ps-card {
+    background-color: white;
+    border: 1px solid #f1f5f9;
+    border-radius: 1.5rem;
+    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+  }
+
+  .status-pill {
+    padding: 0.25rem 0.75rem;
+    border-radius: 9999px;
+    font-size: 0.7rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+}
+
+@keyframes slideUp {
+  from { transform: translateY(20px); opacity: 0; }
+  to { transform: translateY(0); opacity: 1; }
+}
+
+.animate-slide-up {
+  animation: slideUp 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+.custom-scrollbar::-webkit-scrollbar {
+  display: none;
 }

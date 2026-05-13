@@ -6,7 +6,7 @@ async function geocodePincode(pincode: string): Promise<{ lat: string; lon: stri
     const url = `https://nominatim.openstreetmap.org/search?postalcode=${pincode}&country=India&format=json`;
     const response = await fetch(url, {
       headers: {
-        'User-Agent': 'PS5StockAlertIndia/1.0',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
       },
     });
     const data = await response.json() as { lat: string; lon: string }[];
@@ -30,6 +30,8 @@ export async function scrapeBlinkit(pincode: string): Promise<ScrapeResult> {
     const response = await fetch('https://blinkit.com/v2/search/', {
       method: 'POST',
       headers: {
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'Accept': 'application/json, text/plain, */*',
         'app_version': '1',
         'web-version': '1',
         'device_id': 'web',
@@ -55,19 +57,34 @@ export async function scrapeBlinkit(pincode: string): Promise<ScrapeResult> {
 
     const data = await response.json() as { products?: BlinkitProduct[] };
     const products = data.products || [];
+    let bestMatch: any = null;
     
-    // Find PS5 console in results
-    const ps5 = products.find((p) => 
-      p.name.toLowerCase().includes('ps5') || p.name.toLowerCase().includes('playstation 5')
-    );
+    // Find PS5 console in results - Scan all and prioritize in-stock
+    for (const p of products) {
+      const name = p.name.toLowerCase();
+      const isPS5 = name.includes('ps5') || name.includes('playstation 5');
+      const isConsole = name.includes('console') || name.includes('slim') || name.includes('bundle') || name.includes('edition');
+      const isAccessory = name.includes('controller') || name.includes('dualsense') || name.includes('disk drive') || 
+                          name.includes('remote') || name.includes('cover') || name.includes('stand') || name.includes('headset');
 
-    if (ps5) {
+      if (isPS5 && (isConsole || !isAccessory)) {
+        if (p.inventory > 0) {
+          if (!bestMatch || bestMatch.inventory === 0) {
+            bestMatch = p;
+          }
+        } else if (!bestMatch) {
+          bestMatch = p;
+        }
+      }
+    }
+
+    if (bestMatch) {
       return {
-        inStock: ps5.inventory > 0,
-        price: ps5.price ? `₹${ps5.price}` : null,
-        productUrl: `https://blinkit.com/prn/x/prid/${ps5.id}`,
-        productName: ps5.name,
-        deliveryTime: ps5.eta || '10-20 mins',
+        inStock: bestMatch.inventory > 0,
+        price: bestMatch.price ? `₹${bestMatch.price}` : null,
+        productUrl: `https://blinkit.com/prn/x/prid/${bestMatch.id}`,
+        productName: bestMatch.name,
+        deliveryTime: bestMatch.eta || '10-20 mins',
       };
     }
 

@@ -57,7 +57,7 @@ export async function sendSubscriptionConfirmation(email: string) {
       html: `
         <div style="font-family: sans-serif; max-width: 600px; margin: 0 auto; padding: 20px; border: 1px solid #eee; border-radius: 10px;">
           <h2 style="color: #111;">Subscription Confirmed! 🎮</h2>
-          <p>We'll alert you the moment PS5 is available on Amazon, Flipkart, Croma, Vijay Sales, Blinkit, or Zepto.</p>
+          <p>We'll alert you the moment PS5 is available on Amazon, Flipkart, Croma, Vijay Sales, Reliance Digital, Blinkit, or Zepto.</p>
           <p>You can sit back and relax while we do the watching for you.</p>
           <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;" />
           <small style="color: #999;">
