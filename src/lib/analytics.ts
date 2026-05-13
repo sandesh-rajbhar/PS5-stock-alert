@@ -5,7 +5,7 @@ import { track } from '@vercel/analytics';
  * @param action - Name of the event (e.g., 'check_stock', 'subscribe')
  * @param params - Optional properties to attach to the event
  */
-export function trackEvent(action: string, params?: Record<string, unknown>) {
+export function trackEvent(action: string, params?: Record<string, any>) {
   try {
     track(action, params || {});
   } catch (error) {
