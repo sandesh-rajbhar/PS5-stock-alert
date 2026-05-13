@@ -68,6 +68,20 @@ export default function Home() {
             <div className="w-full max-w-lg mx-auto lg:mx-0">
               <SubscribeForm />
             </div>
+
+            {/* Coverage Info */}
+            <div className="mt-8 p-4 bg-blue-50/50 rounded-2xl border border-blue-100/50 max-w-md mx-auto lg:mx-0">
+              <p className="text-[10px] font-black text-blue-600 uppercase tracking-widest mb-3 flex items-center">
+                <ShieldCheck className="w-3 h-3 mr-2" /> 9+ Models Tracked
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {['Slim Disc', 'Slim Digital', 'Disc Standard', 'Digital Edition', 'FC26 Bundle', 'Fortnite Bundle', 'NBA 2K26', 'COD Bundle'].map((model) => (
+                  <span key={model} className="text-[9px] font-bold bg-white text-gray-500 px-2 py-1 rounded-md border border-gray-100">
+                    {model}
+                  </span>
+                ))}
+              </div>
+            </div>
             
             <div className="mt-10 flex flex-wrap justify-center lg:justify-start gap-3 text-[10px] font-black text-gray-400 uppercase tracking-widest">
               <span className="flex items-center bg-gray-50 px-3 py-2 rounded-xl border border-gray-100"><ShieldCheck className="w-3.5 h-3.5 mr-2 text-blue-600" /> Secure</span>
