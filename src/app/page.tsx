@@ -27,16 +27,22 @@ export default function Home() {
   const handleStockUpdate = (pincode: string, results: any[]) => {
     setSearchPincode(pincode);
     // Convert live-check results to StockStatus format for the cards
-    const mappedStocks: StockStatus[] = results.map((r, i) => ({
-      id: `live-${i}`,
-      platform: r.platform.toLowerCase(),
-      product_name: r.productName,
-      in_stock: r.inStock,
-      price: r.price,
-      product_url: r.productUrl,
-      is_pincode_dependent: false,
-      last_checked: new Date().toISOString()
-    }));
+    const qcPlatforms = ['blinkit', 'zepto', 'instamart'];
+    const mappedStocks: StockStatus[] = results.map((r, i) => {
+      const platform = r.platform.toLowerCase();
+      return {
+        id: `live-${i}`,
+        platform,
+        product_name: r.productName,
+        in_stock: r.inStock,
+        price: r.price,
+        product_url: r.productUrl,
+        is_pincode_dependent: false,
+        is_location_dependent: qcPlatforms.includes(platform),
+        note: r.note,
+        last_checked: new Date().toISOString()
+      };
+    });
     setStocks(mappedStocks);
   };
 
@@ -114,10 +120,14 @@ export default function Home() {
           <div className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
              <div className="text-center sm:text-left">
                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
-                 {searchPincode ? `Stock in ${searchPincode}` : 'Live Store Status'}
+                 {searchPincode
+                   ? /^\d{6}$/.test(searchPincode)
+                     ? `Stock in ${searchPincode}`
+                     : 'Stock near your location'
+                   : 'Live Store Status'}
                </h2>
                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                 {searchPincode ? 'Live results for your pincode' : 'Sample snapshot — enter pincode for local results'}
+                 {searchPincode ? 'Live results for your area' : 'Sample snapshot — enter pincode or share location for local results'}
                </p>
              </div>
           </div>

@@ -38,10 +38,16 @@ export default function StockStatusCard({ status }: Props) {
             </p>
           </div>
           <div className={`status-pill shrink-0 ${
-            isAvailable ? 'bg-green-100 text-green-700' : 'bg-red-100 text-red-700'
+            isAvailable
+              ? 'bg-green-100 text-green-700'
+              : status.note
+                ? 'bg-amber-100 text-amber-700'
+                : 'bg-red-100 text-red-700'
           }`}>
             {isAvailable ? (
               <span className="flex items-center"><Check className="w-3 h-3 mr-1" /> Stock</span>
+            ) : status.note ? (
+              <span className="flex items-center"><MapPin className="w-3 h-3 mr-1" /> N/A here</span>
             ) : (
               <span className="flex items-center"><X className="w-3 h-3 mr-1" /> Out</span>
             )}
@@ -50,12 +56,20 @@ export default function StockStatusCard({ status }: Props) {
 
         <div className="space-y-2">
           <p className="text-gray-500 text-sm font-medium line-clamp-2 min-h-[2.5rem]">{isAvailable ? (status.product_name || 'PS5 Console') : 'PS5 Console'}</p>
-          <div className="text-2xl sm:text-3xl font-black text-slate-900">{status.price || '---'}</div>
+          <div className="text-2xl sm:text-3xl font-black text-slate-900">{isAvailable ? (status.price || '---') : '---'}</div>
         </div>
-        
-        <div className="mt-5 flex items-center text-[10px] font-black text-blue-600 bg-blue-50 px-3 py-1.5 rounded-lg w-fit uppercase tracking-wider">
+
+        <div className={`mt-5 flex items-center text-[10px] font-black px-3 py-1.5 rounded-lg w-fit uppercase tracking-wider ${
+          !isAvailable && status.note
+            ? 'text-amber-700 bg-amber-50'
+            : 'text-blue-600 bg-blue-50'
+        }`}>
           <MapPin className="w-3 h-3 mr-1.5" />
-          Local Area Stock
+          {!isAvailable && status.note
+            ? status.note
+            : status.is_location_dependent
+              ? 'Darkstore stock'
+              : 'Local Area Stock'}
         </div>
       </div>
 
@@ -74,6 +88,8 @@ export default function StockStatusCard({ status }: Props) {
         >
           {isAvailable ? (
             <>Buy Now <ExternalLink className="w-4 h-4 ml-2" /></>
+          ) : status.note ? (
+            'Not Available Here'
           ) : (
             'Not Available'
           )}

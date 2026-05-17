@@ -1,8 +1,8 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { trackEvent } from '@/lib/analytics';
-import { MapPin, Bell, ExternalLink, CheckCircle, AlertCircle, Loader2, Mail, ArrowRight, Send } from 'lucide-react';
+import { MapPin, Bell, ExternalLink, CheckCircle, AlertCircle, Loader2, Mail, ArrowRight, Send, Navigation, ShieldAlert } from 'lucide-react';
 
 type CheckResult = {
   platform: string;
@@ -23,6 +23,37 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
   const [telegramLink, setTelegramLink] = useState<string | null>(null);
   const [subStatus, setSubStatus] = useState<'pending_confirmation' | 'already_active' | null>(null);
   const [checkResults, setCheckResults] = useState<CheckResult[]>([]);
+  const [qcStatus, setQcStatus] = useState<'idle' | 'locating' | 'loading' | 'denied' | 'unsupported' | 'error'>('idle');
+  const [qcError, setQcError] = useState('');
+  const denialTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const qcResolvedRef = useRef(false);
+
+  const cancelPendingDenial = () => {
+    if (denialTimerRef.current) {
+      clearTimeout(denialTimerRef.current);
+      denialTimerRef.current = null;
+    }
+  };
+
+  const scheduleDenial = (msg: string) => {
+    cancelPendingDenial();
+    denialTimerRef.current = setTimeout(() => {
+      if (!qcResolvedRef.current) {
+        setQcStatus('denied');
+        setQcError(msg);
+      }
+    }, 1000);
+  };
+
+  const scheduleError = (msg: string) => {
+    cancelPendingDenial();
+    denialTimerRef.current = setTimeout(() => {
+      if (!qcResolvedRef.current) {
+        setQcStatus('error');
+        setQcError(msg);
+      }
+    }, 1000);
+  };
 
   const handleCheckStock = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -53,6 +84,109 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
       setStatus('error');
       setMessage(errorMessage);
     }
+  };
+
+  const runQcCheck = async (lat: number, lng: number, accuracy?: number) => {
+    qcResolvedRef.current = true;
+    cancelPendingDenial();
+    setQcStatus('loading');
+    if (accuracy && accuracy > 1000) {
+      setQcError(`Low location accuracy (±${Math.round(accuracy)}m). Results may be wrong. Enable GPS/precise location for best results.`);
+    } else {
+      setQcError('');
+    }
+    try {
+      const response = await fetch('/api/live-check-qc', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ lat, lng }),
+      });
+      const data = await response.json();
+      if (!response.ok) throw new Error(data.error || 'Quick-commerce check failed');
+
+      const qcResults: CheckResult[] = data.results;
+      const merged = [...checkResults.filter(r => !qcResults.some(q => q.platform === r.platform)), ...qcResults];
+      setCheckResults(merged);
+      if (onResults) onResults(pincode || `${lat.toFixed(3)},${lng.toFixed(3)}`, merged);
+      setStep(2);
+      setQcStatus('idle');
+      trackEvent('check_stock_qc', { lat, lng });
+      setTimeout(() => {
+        document.getElementById('status')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : 'Quick-commerce check failed';
+      setQcStatus('error');
+      setQcError(msg);
+    }
+  };
+
+  const handleQuickCommerceCheck = async () => {
+    // Flip UI state synchronously first to clear any stale denied banner
+    cancelPendingDenial();
+    qcResolvedRef.current = false;
+    setQcError('');
+    setQcStatus('locating');
+
+    if (typeof navigator === 'undefined' || !navigator.geolocation) {
+      setQcStatus('unsupported');
+      setQcError('Your browser does not support location access. Use a modern browser.');
+      return;
+    }
+
+    // Pre-check permission state to avoid transient denied flashes
+    if (navigator.permissions && navigator.permissions.query) {
+      try {
+        const perm = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+        if (perm.state === 'denied') {
+          qcResolvedRef.current = true;
+          setQcStatus('denied');
+          setQcError('Location permission blocked. Enable location access for this site to check Blinkit, Zepto & Instamart darkstores near you.');
+          return;
+        }
+      } catch {
+        // Permissions API unavailable — fall through
+      }
+    }
+
+    const opts: PositionOptions = { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 };
+    const MAX_ATTEMPTS = 3;
+
+    const tryGetPosition = (attempt: number) => {
+      navigator.geolocation.getCurrentPosition(
+        (pos) => runQcCheck(pos.coords.latitude, pos.coords.longitude, pos.coords.accuracy),
+        async (err) => {
+          // Always re-confirm permission state before deciding
+          let permState: PermissionState | null = null;
+          if (navigator.permissions && navigator.permissions.query) {
+            try {
+              const p = await navigator.permissions.query({ name: 'geolocation' as PermissionName });
+              permState = p.state;
+            } catch {}
+          }
+
+          // If permission is granted/prompt and we haven't exhausted retries, silently retry
+          if (permState !== 'denied' && attempt < MAX_ATTEMPTS - 1) {
+            setTimeout(() => {
+              if (!qcResolvedRef.current) tryGetPosition(attempt + 1);
+            }, 400);
+            return;
+          }
+
+          // Out of retries OR permission confirmed denied — schedule banner
+          if (err.code === err.PERMISSION_DENIED || permState === 'denied') {
+            qcResolvedRef.current = true;
+            scheduleDenial('Location permission blocked. Enable location access for this site to check Blinkit, Zepto & Instamart darkstores near you.');
+          } else {
+            qcResolvedRef.current = true;
+            scheduleError('Could not get your location. Try again.');
+          }
+        },
+        opts
+      );
+    };
+
+    tryGetPosition(0);
   };
 
   const handleTelegramOnly = async () => {
@@ -142,6 +276,58 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
           >
             {status === 'loading' ? <Loader2 className="w-6 h-6 animate-spin" /> : 'Check Availability'}
           </button>
+
+          <div className="relative flex items-center my-1">
+            <div className="flex-grow border-t border-gray-200"></div>
+            <span className="mx-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Quick-commerce (10-min delivery)</span>
+            <div className="flex-grow border-t border-gray-200"></div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleQuickCommerceCheck}
+            disabled={qcStatus === 'locating' || qcStatus === 'loading'}
+            className="w-full ps-button py-3.5 inline-flex items-center justify-center gap-2 bg-emerald-600 hover:bg-emerald-700 text-white font-bold text-sm disabled:opacity-60"
+          >
+            {qcStatus === 'locating' ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Getting your location...</>
+            ) : qcStatus === 'loading' ? (
+              <><Loader2 className="w-4 h-4 animate-spin" /> Checking nearby darkstores...</>
+            ) : (
+              <><Navigation className="w-4 h-4" /> Check Blinkit, Zepto & Instamart near me</>
+            )}
+          </button>
+          <p className="text-[10px] text-gray-400 text-center -mt-3">
+            Uses your device location to find serviceable darkstores. Pincode alone won't work for quick-commerce.
+          </p>
+          <p className="text-[10px] text-amber-600 text-center -mt-2 font-bold">
+            ⚠ Best on mobile. Desktop browsers use coarse Wi-Fi/IP location which may not match your real darkstore.
+          </p>
+
+          {(qcStatus === 'denied' || qcStatus === 'unsupported') && (
+            <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-800 flex items-start gap-2">
+              <ShieldAlert className="w-4 h-4 shrink-0 mt-0.5" />
+              <div>
+                <p className="font-bold">Enable location permission</p>
+                <p className="mt-1 leading-relaxed">{qcError}</p>
+                <p className="mt-2 text-[10px] text-amber-700 leading-relaxed">
+                  <strong>iPhone:</strong> Settings → Safari → Location → Ask, then reload.<br />
+                  <strong>Android Chrome:</strong> tap the lock/info icon next to URL → Permissions → Location → Allow.<br />
+                  <strong>Desktop:</strong> click lock icon in address bar → Site settings → Location → Allow.
+                </p>
+              </div>
+            </div>
+          )}
+          {qcStatus === 'error' && (
+            <div className="p-3 bg-red-50 border border-red-100 rounded-xl text-xs text-red-600 font-bold text-center">
+              {qcError}
+            </div>
+          )}
+          {qcStatus === 'loading' && qcError && (
+            <div className="p-3 bg-yellow-50 border border-yellow-200 rounded-xl text-xs text-yellow-800">
+              {qcError}
+            </div>
+          )}
         </form>
       ) : (
         <div className="space-y-6 sm:space-y-8 animate-slide-up">
@@ -185,6 +371,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                     <div className="bg-green-600 text-white p-4 rounded-2xl">
                       <p className="font-bold text-sm">📧 Confirmation email sent to {email}</p>
                       <p className="text-xs mt-1 opacity-90">Click the link in the email to activate alerts.</p>
+                      <p className="text-[11px] mt-2 opacity-95 font-semibold">⚠ Check your Spam/Promotions folder — confirmation and stock alerts may land there.</p>
                     </div>
                     {telegramLink && (
                       <div className="relative">
@@ -255,6 +442,9 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                   <button type="submit" disabled={status === 'loading'} className="w-full ps-button ps-button-primary py-4">
                     {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Notify Me by Email'}
                   </button>
+                  <p className="text-[10px] text-gray-400 text-center leading-relaxed">
+                    Check your Spam/Promotions folder if you don&apos;t see the confirmation email within a minute. Stock alerts may also land there — mark as Not Spam to ensure delivery.
+                  </p>
                 </form>
               </div>
             )}
