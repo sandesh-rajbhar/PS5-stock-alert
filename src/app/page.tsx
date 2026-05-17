@@ -138,12 +138,6 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Footer - Minimal */}
-      <footer className="py-12 px-4 text-center border-t border-gray-100">
-        <p className="text-[10px] font-bold text-gray-300 uppercase tracking-widest leading-relaxed">
-          Not affiliated with Sony. <br/> Commissions may be earned from links.
-        </p>
-      </footer>
     </main>
   );
 }
