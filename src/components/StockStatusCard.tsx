@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useEffect } from 'react';
 import { StockStatus } from '@/lib/types';
 import { trackEvent } from '@/lib/analytics';
 import { ExternalLink, Check, X, MapPin } from 'lucide-react';
@@ -9,7 +10,21 @@ interface Props {
 }
 
 export default function StockStatusCard({ status }: Props) {
+  const [mounted, setMounted] = useState(false);
   const isAvailable = status.in_stock;
+
+  useEffect(() => {
+    setMounted(true);
+  }, []);
+
+  const formatTime = (dateString: string) => {
+    try {
+      const date = new Date(dateString);
+      return date.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+    } catch (e) {
+      return '---';
+    }
+  };
 
   return (
     <div className={`ps-card overflow-hidden flex flex-col h-full transition-transform hover:-translate-y-1 duration-300 ${!isAvailable && 'bg-gray-50/80'}`}>
@@ -19,7 +34,7 @@ export default function StockStatusCard({ status }: Props) {
           <div className="min-w-0">
             <h3 className="text-xl sm:text-2xl font-black text-slate-900 uppercase tracking-tight truncate">{status.platform}</h3>
             <p className="text-[9px] sm:text-[10px] font-bold text-gray-400 mt-1 uppercase tracking-widest whitespace-nowrap">
-              Checked {new Date(status.last_checked).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+              Checked {mounted ? formatTime(status.last_checked) : '...'}
             </p>
           </div>
           <div className={`status-pill shrink-0 ${

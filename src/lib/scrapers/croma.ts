@@ -24,12 +24,17 @@ export async function scrapeCroma(pincode: string): Promise<ScrapeResult> {
     let matchCount = productUrls.length;
 
     // Step 1: Fetch all product pages concurrently
-    const fetchPromises = productUrls.map(async (url) => {
+    const fetchPromises = productUrls.map(async (url, index) => {
       try {
+        await new Promise(r => setTimeout(r, index * 200));
+
         const response = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Cookie': `pincode=${pincode}`,
+            'Referer': 'https://www.croma.com/',
           },
         });
         
@@ -44,7 +49,12 @@ export async function scrapeCroma(pincode: string): Promise<ScrapeResult> {
                              $('.btn-not-available').length > 0 ||
                              $('body').text().includes('Not Deliverable');
         
-        const price = $('.pdp-price .amount').first().text().trim() || $('.cp-price .amount').first().text().trim();
+        const rawPrice = $('.pdp-price .amount').first().text().trim() ||
+                         $('.cp-price .amount').first().text().trim() ||
+                         $('[data-testid="new-price"]').first().text().trim() ||
+                         $('.amount').first().text().trim();
+        const priceMatch = rawPrice.match(/[\d,]+(?:\.\d+)?/);
+        const price = priceMatch ? `₹${priceMatch[0]}` : '';
 
         return {
           title,
@@ -78,6 +88,7 @@ export async function scrapeCroma(pincode: string): Promise<ScrapeResult> {
         price: null,
         productUrl: productUrls[0],
         productName: 'PS5 Console',
+        listingCount: matchCount,
       };
     }
 
@@ -95,6 +106,7 @@ export async function scrapeCroma(pincode: string): Promise<ScrapeResult> {
       price: null,
       productUrl: productUrls[0],
       productName: 'PS5 Console',
+      listingCount: productUrls.length,
       error: true,
     };
   }

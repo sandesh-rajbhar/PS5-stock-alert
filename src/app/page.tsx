@@ -8,6 +8,7 @@ import { Zap, ShieldCheck, Gamepad2 } from 'lucide-react';
 
 export default function Home() {
   const [stocks, setStocks] = useState<StockStatus[]>([]);
+  const [searchPincode, setSearchPincode] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -23,9 +24,25 @@ export default function Home() {
       });
   }, []);
 
+  const handleStockUpdate = (pincode: string, results: any[]) => {
+    setSearchPincode(pincode);
+    // Convert live-check results to StockStatus format for the cards
+    const mappedStocks: StockStatus[] = results.map((r, i) => ({
+      id: `live-${i}`,
+      platform: r.platform.toLowerCase(),
+      product_name: r.productName,
+      in_stock: r.inStock,
+      price: r.price,
+      product_url: r.productUrl,
+      is_pincode_dependent: ['blinkit', 'zepto'].includes(r.platform.toLowerCase()),
+      last_checked: new Date().toISOString()
+    }));
+    setStocks(mappedStocks);
+  };
+
   return (
     <main className="min-h-screen bg-white">
-      {/* Mobile-Optimized Navbar */}
+      {/* ... rest of nav ... */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 py-3 border-b border-gray-100 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-[#00439c] rounded-lg flex items-center justify-center">
@@ -42,10 +59,10 @@ export default function Home() {
         </div>
       </nav>
 
-      {/* Hero Section - Improved Responsiveness */}
+      {/* Hero Section */}
       <section className="px-4 py-12 md:py-24 max-w-7xl mx-auto">
         <div className="flex flex-col lg:flex-row items-center lg:justify-between gap-12 lg:gap-8 text-center lg:text-left">
-          {/* Visual Hook - Using user provided image */}
+          {/* Visual Hook */}
           <div className="w-full max-w-[320px] md:max-w-md lg:order-2 animate-slide-up shrink-0">
             <div className="relative">
               <img 
@@ -66,7 +83,7 @@ export default function Home() {
             </p>
             
             <div className="w-full max-w-lg mx-auto lg:mx-0">
-              <SubscribeForm />
+              <SubscribeForm onResults={handleStockUpdate} />
             </div>
 
             {/* Coverage Info */}
@@ -91,13 +108,17 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Retailer List - Adaptive Grid */}
-      <section className="bg-gray-50/50 py-20 px-4">
+      {/* Retailer List */}
+      <section id="status" className="bg-gray-50/50 py-20 px-4 scroll-mt-20">
         <div className="max-w-7xl mx-auto">
           <div className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
              <div className="text-center sm:text-left">
-               <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">Store Status</h2>
-               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">Latest National Snapshot</p>
+               <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
+                 {searchPincode ? `Stock in ${searchPincode}` : 'Store Status'}
+               </h2>
+               <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
+                 {searchPincode ? 'Real-time Local Availability' : 'Latest National Snapshot'}
+               </p>
              </div>
           </div>
 
