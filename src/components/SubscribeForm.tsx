@@ -141,7 +141,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
         if (perm.state === 'denied') {
           qcResolvedRef.current = true;
           setQcStatus('denied');
-          setQcError('Location permission blocked. Enable location access for this site to check Blinkit, Zepto & Instamart darkstores near you.');
+          setQcError('Location permission blocked. Enable location access for this site to check Zepto & Instamart darkstores near you.');
           return;
         }
       } catch {
@@ -176,7 +176,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
           // Out of retries OR permission confirmed denied — schedule banner
           if (err.code === err.PERMISSION_DENIED || permState === 'denied') {
             qcResolvedRef.current = true;
-            scheduleDenial('Location permission blocked. Enable location access for this site to check Blinkit, Zepto & Instamart darkstores near you.');
+            scheduleDenial('Location permission blocked. Enable location access for this site to check Zepto & Instamart darkstores near you.');
           } else {
             qcResolvedRef.current = true;
             scheduleError('Could not get your location. Try again.');
@@ -294,7 +294,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
             ) : qcStatus === 'loading' ? (
               <><Loader2 className="w-4 h-4 animate-spin" /> Checking nearby darkstores...</>
             ) : (
-              <><Navigation className="w-4 h-4" /> Check Blinkit, Zepto & Instamart near me</>
+              <><Navigation className="w-4 h-4" /> Check Zepto & Instamart near me</>
             )}
           </button>
           <p className="text-[10px] text-gray-400 text-center -mt-3">
