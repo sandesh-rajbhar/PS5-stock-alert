@@ -49,7 +49,7 @@ export default function StockStatusCard({ status }: Props) {
         </div>
 
         <div className="space-y-2">
-          <p className="text-gray-500 text-sm font-medium line-clamp-2 min-h-[2.5rem]">{status.product_name || 'PS5 Standard Edition'}</p>
+          <p className="text-gray-500 text-sm font-medium line-clamp-2 min-h-[2.5rem]">{isAvailable ? (status.product_name || 'PS5 Console') : 'PS5 Console'}</p>
           <div className="text-2xl sm:text-3xl font-black text-slate-900">{status.price || '---'}</div>
         </div>
         

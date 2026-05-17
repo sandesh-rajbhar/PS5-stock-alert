@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
+import { nameFromUrl } from './nameFromUrl';
 
 interface ScrapeOpts {
   maxUrls?: number;
@@ -99,7 +100,7 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         inStock: false,
         price: null,
         productUrl: productUrls[0],
-        productName: 'PS5 Console',
+        productName: nameFromUrl(productUrls[0]),
         listingCount: matchCount,
       };
     }
@@ -117,7 +118,7 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
       inStock: false,
       price: null,
       productUrl: productUrls[0],
-      productName: 'PS5 Console',
+      productName: nameFromUrl(productUrls[0]),
       listingCount: productUrls.length,
       error: true,
     };

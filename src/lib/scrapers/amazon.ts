@@ -1,6 +1,7 @@
 import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
+import { nameFromUrl } from './nameFromUrl';
 
 export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
   const productUrls = [
@@ -139,7 +140,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         inStock: false,
         price: null,
         productUrl: productUrls[0],
-        productName: 'PS5 Console',
+        productName: nameFromUrl(productUrls[0]),
         listingCount: matchCount,
       };
     }
@@ -157,7 +158,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
       inStock: false,
       price: null,
       productUrl: productUrls[0],
-      productName: 'PS5 Console',
+      productName: nameFromUrl(productUrls[0]),
       listingCount: productUrls.length,
       error: true,
     };
