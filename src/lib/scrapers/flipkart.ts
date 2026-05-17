@@ -2,8 +2,12 @@ import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 
-export async function scrapeFlipkart(pincode: string): Promise<ScrapeResult> {
-  const productUrls = [
+interface ScrapeOpts {
+  maxUrls?: number;
+}
+
+export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
+  const allProductUrls = [
     'https://www.flipkart.com/sony-playstation-5-console-gowr-vch-bundle-825-gb-yes/p/itm01fb765abae7a',
     'https://www.flipkart.com/sony-ps5-standard-dualsense-bundle-cfi-1208a01r-825gb-ssd-gb/p/itm73b71109455e7',
     'https://www.flipkart.com/sony-playstation-5-console-fc-24-825-gb-ea-sports-full-game-voucher/p/itm7b9c4acf55675',
@@ -26,7 +30,9 @@ export async function scrapeFlipkart(pincode: string): Promise<ScrapeResult> {
     'https://www.flipkart.com/sony-ps5-digital-cfi-2116b01y-825-gb/p/itm7124b7348127b',
     'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c'
   ];
-  
+
+  const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
+
   try {
     let bestMatch: any = null;
     let matchCount = productUrls.length;

@@ -2,8 +2,12 @@ import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 
-export async function scrapeRelianceDigital(pincode: string): Promise<ScrapeResult> {
-  const productUrls = [
+interface ScrapeOpts {
+  maxUrls?: number;
+}
+
+export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
+  const allProductUrls = [
     'https://www.reliancedigital.in/product/sony-ps5-standard-console-with-2-dualsense-controllers-m7oq28-8963763',
     'https://www.reliancedigital.in/product/sonyplaystation5standardconsolenba-mg53du-9490141',
     'https://www.reliancedigital.in/product/sony-playstation-5-digital-console-fortnite-bundle-mk3j7r-9713761',
@@ -24,7 +28,9 @@ export async function scrapeRelianceDigital(pincode: string): Promise<ScrapeResu
     'https://www.reliancedigital.in/product/sony-playstation-5-digital-e-chassis-gaming-console-mn357x-9991584',
     'https://www.reliancedigital.in/product/sony-ps5-standard-sa-e-chassis-gaming-console-mmeqbt-9974618'
   ];
-  
+
+  const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
+
   try {
     let bestMatch: any = null;
     let matchCount = productUrls.length;
