@@ -114,10 +114,10 @@ export default function Home() {
           <div className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
              <div className="text-center sm:text-left">
                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
-                 {searchPincode ? `Stock in ${searchPincode}` : 'Store Status'}
+                 {searchPincode ? `Stock in ${searchPincode}` : 'Live Store Status'}
                </h2>
                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                 {searchPincode ? 'Real-time Local Availability' : 'Latest National Snapshot'}
+                 {searchPincode ? 'Live results for your pincode' : 'Sample snapshot — enter pincode for local results'}
                </p>
              </div>
           </div>

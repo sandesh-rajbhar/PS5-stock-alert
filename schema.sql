@@ -5,33 +5,35 @@ CREATE TABLE subscribers (
   pincode TEXT NOT NULL,
   notify_email BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
-  is_active BOOLEAN DEFAULT TRUE,
+  is_active BOOLEAN DEFAULT FALSE,                       -- Flips to TRUE after email OR Telegram confirm
   unsubscribe_token TEXT DEFAULT gen_random_uuid()::TEXT,
+  confirm_token TEXT DEFAULT gen_random_uuid()::TEXT,    -- Used by /api/confirm and Telegram /start
+  telegram_chat_id TEXT,                                 -- Set when user links Telegram via webhook
   UNIQUE(email)
 );
 
--- Stores latest stock status per platform
+-- Stores latest stock status per platform (national baseline)
 CREATE TABLE stock_status (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  platform TEXT NOT NULL,           -- 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'blinkit' | 'zepto'
+  platform TEXT NOT NULL,           -- 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'reliancedigital'
   product_name TEXT,
   in_stock BOOLEAN DEFAULT FALSE,
   price TEXT,
   product_url TEXT,
-  is_pincode_dependent BOOLEAN DEFAULT FALSE,  -- TRUE for Blinkit & Zepto
+  is_pincode_dependent BOOLEAN DEFAULT FALSE,
   last_checked TIMESTAMP DEFAULT NOW(),
   UNIQUE(platform)
 );
 
--- For Blinkit & Zepto: stock varies by pincode/dark store
+-- Per-pincode stock cache (used for every platform to track local stock changes)
 CREATE TABLE quick_commerce_stock (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  platform TEXT NOT NULL,           -- 'blinkit' | 'zepto'
+  platform TEXT NOT NULL,
   pincode TEXT NOT NULL,
   in_stock BOOLEAN DEFAULT FALSE,
   price TEXT,
   product_url TEXT,
-  delivery_time TEXT,               -- e.g. "10 minutes", "2 hours"
+  delivery_time TEXT,
   last_checked TIMESTAMP DEFAULT NOW(),
   UNIQUE(platform, pincode)
 );
@@ -64,3 +66,12 @@ ALTER TABLE notification_log ENABLE ROW LEVEL SECURITY;
 -- Public read policies
 CREATE POLICY "Public can read stock status" ON stock_status FOR SELECT USING (true);
 CREATE POLICY "Public can read quick commerce stock" ON quick_commerce_stock FOR SELECT USING (true);
+
+-- ============================================================================
+-- MIGRATION: run against existing databases that were created before the
+-- double-opt-in + Telegram changes. Safe to re-run.
+-- ============================================================================
+ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS confirm_token TEXT DEFAULT gen_random_uuid()::TEXT;
+ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT;
+ALTER TABLE subscribers ALTER COLUMN is_active SET DEFAULT FALSE;
+UPDATE subscribers SET confirm_token = gen_random_uuid()::TEXT WHERE confirm_token IS NULL;
