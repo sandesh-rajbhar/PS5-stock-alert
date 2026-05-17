@@ -8,6 +8,7 @@ export interface ScrapeResult {
   listingCount?: number;
   error?: boolean;
   deliveryTime?: string; // For Blinkit/Zepto
+  note?: string; // Surface state like "Store not serviceable here"
 }
 
 export interface Subscriber {

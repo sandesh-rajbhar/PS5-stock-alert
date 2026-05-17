@@ -11,9 +11,10 @@ type CheckResult = {
   productUrl: string;
   deliveryTime?: string;
   listingCount?: number;
+  note?: string;
 };
 
-export default function SubscribeForm() {
+export default function SubscribeForm({ onResults }: { onResults?: (pincode: string, results: any[]) => void }) {
   const [step, setStep] = useState<1 | 2>(1);
   const [email, setEmail] = useState('');
   const [pincode, setPincode] = useState('');
@@ -35,9 +36,16 @@ export default function SubscribeForm() {
       if (!response.ok) throw new Error(data.error || 'Failed to check stock');
 
       setCheckResults(data.results);
+      if (onResults) onResults(pincode, data.results);
+      
       setStep(2);
       setStatus('idle');
       trackEvent('check_stock', { pincode });
+
+      // Smooth scroll to results
+      setTimeout(() => {
+        document.getElementById('status')?.scrollIntoView({ behavior: 'smooth' });
+      }, 100);
     } catch (error: unknown) {
       const errorMessage = error instanceof Error ? error.message : 'Something went wrong.';
       setStatus('error');
@@ -120,14 +128,18 @@ export default function SubscribeForm() {
               <div key={result.platform} className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-gray-100 bg-gray-50">
                 <div className="flex flex-col">
                   <span className="font-bold text-xs sm:text-sm">{result.platform}</span>
-                  {result.listingCount && result.listingCount > 0 && (
+                  {result.note ? (
+                    <span className="text-[8px] font-medium text-amber-600 uppercase tracking-tighter">
+                      {result.note}
+                    </span>
+                  ) : result.listingCount && result.listingCount > 0 ? (
                     <span className="text-[8px] font-medium text-gray-400 uppercase tracking-tighter">
                       Scanned {result.listingCount} listings
                     </span>
-                  )}
+                  ) : null}
                 </div>
-                <span className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-1 rounded ${result.inStock ? 'bg-green-100 text-green-700' : 'bg-gray-200 text-gray-400'}`}>
-                  {result.inStock ? 'Available' : 'No Stock'}
+                <span className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-1 rounded ${result.inStock ? 'bg-green-100 text-green-700' : result.note ? 'bg-amber-100 text-amber-700' : 'bg-gray-200 text-gray-400'}`}>
+                  {result.inStock ? 'Available' : result.note ? 'N/A' : 'No Stock'}
                 </span>
               </div>
             ))}

@@ -12,129 +12,88 @@ import { Platform, ScrapeResult } from '@/lib/types';
 
 export const maxDuration = 60; // Extend timeout for hobby plan (if possible) or just stay efficient
 
-async function handleStandardPlatform(platform: Platform, scrapeFn: (pincode: string) => Promise<ScrapeResult>) {
-  const defaultPincode = '110001'; // Delhi
-  const result = await scrapeFn(defaultPincode);
-  if (result.error) return;
+async function checkAllPlatformsForPincode(pincode: string) {
+  const platforms = [
+    { name: 'amazon', fn: scrapeAmazon },
+    { name: 'flipkart', fn: scrapeFlipkart },
+    { name: 'croma', fn: scrapeCroma },
+    { name: 'vijaysales', fn: scrapeVijaySales },
+    { name: 'reliancedigital', fn: scrapeRelianceDigital },
+    { name: 'blinkit', fn: scrapeBlinkit },
+    { name: 'zepto', fn: scrapeZepto }
+  ];
 
-  // Get previous status
-  const { data: prevStatus } = await supabaseAdmin
-    .from('stock_status')
-    .select('in_stock')
-    .eq('platform', platform)
-    .single();
+  for (const p of platforms) {
+    try {
+      const result = await p.fn(pincode);
+      if (result.error) continue;
 
-  const becameInStock = result.inStock && (!prevStatus || !prevStatus.in_stock);
+      const isQuickCommerce = ['blinkit', 'zepto'].includes(p.name);
+      
+      // 1. Get previous status for THIS pincode and platform
+      const table = isQuickCommerce ? 'quick_commerce_stock' : 'pincode_stock_cache';
+      
+      // Note: We need a cache table for standard platforms too if we want to track per-pincode stock-ins accurately
+      // For now, let's use the quick_commerce_stock table structure for ALL pincode-specific checks
+      const { data: prevStatus } = await supabaseAdmin
+        .from('quick_commerce_stock')
+        .select('in_stock')
+        .eq('platform', p.name)
+        .eq('pincode', pincode)
+        .single();
 
-  // Update DB
-  await supabaseAdmin.from('stock_status').upsert({
-    platform,
-    product_name: result.productName,
-    in_stock: result.inStock,
-    price: result.price,
-    product_url: result.productUrl,
-    last_checked: new Date().toISOString(),
-  }, { onConflict: 'platform' });
+      const becameInStock = result.inStock && (!prevStatus || !prevStatus.in_stock);
 
-  if (becameInStock) {
-    // Log event
-    const { data: event } = await supabaseAdmin.from('stock_events').insert({
-      platform,
-      became_in_stock: true,
-      price: result.price,
-      product_url: result.productUrl,
-    }).select().single();
-
-    // Notify all active subscribers
-    const { data: subscribers } = await supabaseAdmin
-      .from('subscribers')
-      .select('id, email, unsubscribe_token')
-      .eq('is_active', true);
-
-    if (subscribers && event) {
-      for (const sub of subscribers) {
-        await sendStockAlert({
-          email: sub.email,
-          platform,
-          productUrl: result.productUrl,
-          price: result.price,
-          unsubscribeToken: sub.unsubscribe_token,
-        });
-        
-        // Log notification
-        await supabaseAdmin.from('notification_log').insert({
-          subscriber_id: sub.id,
-          stock_event_id: event.id,
-        });
-      }
-    }
-  }
-}
-
-async function handleQuickCommerce(pincode: string) {
-  const platforms: ('blinkit' | 'zepto')[] = ['blinkit', 'zepto'];
-  
-  for (const platform of platforms) {
-    const scrapeFn = platform === 'blinkit' ? scrapeBlinkit : scrapeZepto;
-    const result = await scrapeFn(pincode);
-    if (result.error) continue;
-
-    // Check status for this pincode
-    const { data: prevStatus } = await supabaseAdmin
-      .from('quick_commerce_stock')
-      .select('in_stock')
-      .eq('platform', platform)
-      .eq('pincode', pincode)
-      .single();
-
-    const becameInStock = result.inStock && (!prevStatus || !prevStatus.in_stock);
-
-    await supabaseAdmin.from('quick_commerce_stock').upsert({
-      platform,
-      pincode,
-      in_stock: result.inStock,
-      price: result.price,
-      product_url: result.productUrl,
-      delivery_time: result.deliveryTime,
-      last_checked: new Date().toISOString(),
-    }, { onConflict: 'platform,pincode' });
-
-    if (becameInStock) {
-       const { data: event } = await supabaseAdmin.from('stock_events').insert({
-        platform: `${platform} (${pincode})`,
-        became_in_stock: true,
+      // 2. Update Pincode Cache
+      await supabaseAdmin.from('quick_commerce_stock').upsert({
+        platform: p.name,
+        pincode,
+        in_stock: result.inStock,
         price: result.price,
         product_url: result.productUrl,
-      }).select().single();
+        delivery_time: result.deliveryTime,
+        last_checked: new Date().toISOString(),
+      }, { onConflict: 'platform,pincode' });
 
-      // Notify only subscribers with THIS pincode
-      const { data: subscribers } = await supabaseAdmin
-        .from('subscribers')
-        .select('id, email, unsubscribe_token')
-        .eq('is_active', true)
-        .eq('pincode', pincode);
+      // 3. Notify if stock appeared
+      if (becameInStock) {
+        const { data: event } = await supabaseAdmin.from('stock_events').insert({
+          platform: `${p.name} (${pincode})`,
+          became_in_stock: true,
+          price: result.price,
+          product_url: result.productUrl,
+        }).select().single();
 
-      if (subscribers && event) {
-        for (const sub of subscribers) {
-          await sendStockAlert({
-            email: sub.email,
-            platform,
-            productUrl: result.productUrl,
-            price: result.price,
-            deliveryTime: result.deliveryTime,
-            unsubscribeToken: sub.unsubscribe_token,
-          });
-          
-          await supabaseAdmin.from('notification_log').insert({
-            subscriber_id: sub.id,
-            stock_event_id: event.id,
-          });
+        const { data: subscribers } = await supabaseAdmin
+          .from('subscribers')
+          .select('id, email, unsubscribe_token')
+          .eq('is_active', true)
+          .eq('pincode', pincode);
+
+        if (subscribers && event) {
+          for (const sub of subscribers) {
+            await sendStockAlert({
+              email: sub.email,
+              platform: p.name,
+              productUrl: result.productUrl,
+              price: result.price,
+              deliveryTime: result.deliveryTime,
+              unsubscribeToken: sub.unsubscribe_token,
+            });
+            
+            await supabaseAdmin.from('notification_log').insert({
+              subscriber_id: sub.id,
+              stock_event_id: event.id,
+            });
+          }
         }
       }
+      
+      // Delay between platforms to avoid rate limits
+      await new Promise(r => setTimeout(r, 500));
+    } catch (e) {
+      console.error(`Error checking ${p.name} for ${pincode}:`, e);
     }
-    
-    // Small delay between platforms per pincode
-    await new Promise(r => setTimeout(r, 500));
   }
 }
 
@@ -149,16 +108,32 @@ export async function GET(request: Request) {
   }
 
   try {
-    // 1. Check Standard Platforms
-    await Promise.allSettled([
-      handleStandardPlatform('amazon', scrapeAmazon),
-      handleStandardPlatform('flipkart', scrapeFlipkart),
-      handleStandardPlatform('croma', scrapeCroma),
-      handleStandardPlatform('vijaysales', scrapeVijaySales),
-      handleStandardPlatform('reliancedigital', scrapeRelianceDigital),
-    ]);
+    // 1. Update National Snapshot (Baseline for dashboard)
+    const defaultPincode = '110001';
+    const standardPlatforms = [
+      { name: 'amazon', fn: scrapeAmazon },
+      { name: 'flipkart', fn: scrapeFlipkart },
+      { name: 'croma', fn: scrapeCroma },
+      { name: 'vijaysales', fn: scrapeVijaySales },
+      { name: 'reliancedigital', fn: scrapeRelianceDigital }
+    ];
 
-    // 2. Check Quick Commerce for Unique Pincodes
+    for (const p of standardPlatforms) {
+      const result = await p.fn(defaultPincode);
+      if (!result.error) {
+        await supabaseAdmin.from('stock_status').upsert({
+          platform: p.name,
+          product_name: result.productName,
+          in_stock: result.inStock,
+          price: result.price,
+          product_url: result.productUrl,
+          last_checked: new Date().toISOString(),
+        }, { onConflict: 'platform' });
+      }
+      await new Promise(r => setTimeout(r, 1000));
+    }
+
+    // 2. Localized Checks for Subscribers
     const { data: pincodesData } = await supabaseAdmin
       .from('subscribers')
       .select('pincode')
@@ -167,9 +142,8 @@ export async function GET(request: Request) {
     const uniquePincodes = Array.from(new Set(pincodesData?.map(p => p.pincode) || []));
 
     for (const pincode of uniquePincodes) {
-      await handleQuickCommerce(pincode);
-      // Delay between pincode batches
-      await new Promise(r => setTimeout(r, 1000));
+      await checkAllPlatformsForPincode(pincode);
+      await new Promise(r => setTimeout(r, 2000)); // Larger delay between pincode batches
     }
 
     return NextResponse.json({ success: true, checked_pincodes: uniquePincodes.length });

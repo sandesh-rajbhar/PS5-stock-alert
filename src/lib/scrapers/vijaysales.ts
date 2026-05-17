@@ -16,12 +16,17 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
     let bestMatch: any = null;
     let matchCount = productUrls.length;
 
-    const fetchPromises = productUrls.map(async (url) => {
+    const fetchPromises = productUrls.map(async (url, index) => {
       try {
+        await new Promise(r => setTimeout(r, index * 200));
+
         const response = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.9',
             'Cookie': `pincode=${pincode}`,
+            'Referer': 'https://www.vijaysales.com/',
           },
         });
         
@@ -36,7 +41,13 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
                              $('.btn-notify-me').length > 0 || 
                              $('.btn-add-to-cart').length === 0;
         
-        const price = $('.pdp-price').first().text().trim() || $('.vsprod-price').first().text().trim();
+        const rawPrice = $('.pdp-price').first().text().trim() ||
+                         $('.vsprod-price').first().text().trim() ||
+                         $('[class*="price"]').first().text().trim();
+        const priceMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/) || rawPrice.match(/[\d,]{4,}(?:\.\d+)?/);
+        const price = priceMatch
+          ? (priceMatch[0].startsWith('₹') ? priceMatch[0].replace(/\s+/g, '') : `₹${priceMatch[0]}`)
+          : '';
 
         return {
           title,
@@ -70,6 +81,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
         price: null,
         productUrl: productUrls[0],
         productName: 'PS5 Console',
+        listingCount: matchCount,
       };
     }
 
@@ -87,6 +99,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
       price: null,
       productUrl: productUrls[0],
       productName: 'PS5 Console',
+      listingCount: productUrls.length,
       error: true,
     };
   }

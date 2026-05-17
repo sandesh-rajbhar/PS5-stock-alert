@@ -34,17 +34,24 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
       })
     });
 
-    const setCookie = addressResponse.headers.get('set-cookie') || '';
+    // Correctly handle multiple set-cookie headers
+    const rawCookies = addressResponse.headers.raw()['set-cookie'] || [];
+    const cookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    
     let bestMatch: any = null;
     let matchCount = productUrls.length;
 
     // Step 2: Fetch all product pages concurrently
-    const fetchPromises = productUrls.map(async (url) => {
+    const fetchPromises = productUrls.map(async (url, index) => {
       try {
+        // Small staggered delay
+        await new Promise(r => setTimeout(r, index * 200));
+
         const response = await fetch(url, {
           headers: { 
             ...headers, 
-            'Cookie': setCookie, 
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+            'Cookie': cookies, 
             'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8' 
           },
         });
@@ -57,17 +64,54 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         if (!title) return null; // Captcha or invalid page
 
         const availabilityText = $('#availability').text().trim().toLowerCase();
-        const isOutOfStock = availabilityText.includes('currently unavailable') || 
+        const outOfStockDiv = $('#outOfStock').length > 0;
+        const addToCart = $('#add-to-cart-button').length > 0;
+        const buyNow = $('#buy-now-button').length > 0;
+        
+        const isOutOfStock = outOfStockDiv || 
+                             (!addToCart && !buyNow) ||
+                             availabilityText.includes('currently unavailable') || 
                              availabilityText.includes('out of stock') || 
                              availabilityText.includes('cannot be delivered');
         
-        const price = $('.a-price-whole').first().text().trim();
+        // Prefer .a-offscreen (full accessible price like "₹49,999.00"), fall back to .a-price-whole
+        const priceContainers = [
+          '#centerCol #corePrice_desktop_feature_div',
+          '#centerCol #corePriceDisplay_desktop_feature_div',
+          '#rightCol #corePrice_feature_div',
+          '#buybox',
+        ];
+
+        let price = '';
+        if (!isOutOfStock) {
+          for (const container of priceContainers) {
+            // Try full offscreen text first
+            const offscreen = $(`${container} .a-price .a-offscreen`).first().text().trim();
+            if (offscreen) {
+              const match = offscreen.match(/₹\s*[\d,]+(?:\.\d+)?/);
+              if (match) { price = match[0].replace(/\s+/g, ''); break; }
+            }
+            // Fallback: stitch whole + fraction
+            const whole = $(`${container} .a-price-whole`).first().text().replace(/[^\d,]/g, '').replace(/[,.]$/, '');
+            if (whole) {
+              const fraction = $(`${container} .a-price-fraction`).first().text().replace(/\D/g, '');
+              price = '₹' + whole + (fraction ? `.${fraction}` : '');
+              break;
+            }
+          }
+          // Last-resort old layout
+          if (!price) {
+            const legacy = $('#priceblock_ourprice, #priceblock_dealprice').first().text().trim();
+            const m = legacy.match(/₹\s*[\d,]+(?:\.\d+)?/);
+            if (m) price = m[0].replace(/\s+/g, '');
+          }
+        }
 
         return {
           title,
           url,
-          price: price ? `₹${price}` : null,
-          isOutOfStock: isOutOfStock || !price
+          price: (price && !isOutOfStock) ? price : null,
+          isOutOfStock: isOutOfStock
         };
       } catch (e) {
         return null;
@@ -96,6 +140,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         price: null,
         productUrl: productUrls[0],
         productName: 'PS5 Console',
+        listingCount: matchCount,
       };
     }
 
@@ -113,6 +158,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
       price: null,
       productUrl: productUrls[0],
       productName: 'PS5 Console',
+      listingCount: productUrls.length,
       error: true,
     };
   }

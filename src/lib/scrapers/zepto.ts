@@ -21,30 +21,74 @@ async function geocodePincode(pincode: string): Promise<{ lat: string; lon: stri
 }
 
 export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
-  const url = 'https://www.zeptonow.com/';
+  const url = 'https://www.zepto.com/';
   try {
     const coords = await geocodePincode(pincode);
-    if (!coords) throw new Error('Could not geocode pincode');
+    if (!coords) {
+      return {
+        inStock: false,
+        price: null,
+        productUrl: url,
+        productName: 'PS5 Console',
+        note: 'Store not available for this pincode',
+      };
+    }
 
-    // 1. Get store ID
-    const storeResponse = await fetch('https://api.zeptonow.com/api/v2/store/', {
+    // 1. Get store ID using the serviceable address endpoint
+    const storeResponse = await fetch(`https://www.zepto.com/api/v1/address/serviceable/?lat=${coords.lat}&lon=${coords.lon}`, {
       headers: {
-        'lat': coords.lat,
-        'lon': coords.lon,
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'okhttp/4.12.0',
+        'Accept': 'application/json',
+        'platform': 'ANDROID',
+        'app_version': '12.0.0',
       },
     });
     
-    if (!storeResponse.ok) throw new Error(`Zepto store API failed: ${storeResponse.status}`);
-    const storeData = await storeResponse.json() as { store_id: string };
-    const storeId = storeData.store_id;
+    let storeId = '';
+    if (storeResponse.ok) {
+        const serviceData = await storeResponse.json() as any;
+        storeId = serviceData?.store_id || serviceData?.data?.store_id || serviceData?.address?.store_id;
+    }
+
+    if (!storeId) {
+        // Try fallback to layout config
+        const layoutResponse = await fetch(`https://www.zepto.com/api/v1/config/layout/?lat=${coords.lat}&lon=${coords.lon}&page_type=HOME`, {
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'platform': 'WEB',
+            },
+        });
+        if (layoutResponse.ok) {
+            const layoutData = await layoutResponse.json() as any;
+            storeId = layoutData?.store_id || layoutData?.data?.store_id;
+        }
+    }
+
+    if (!storeId) {
+        // Try v2 store fallback on new domain
+        const fallbackResponse = await fetch('https://www.zepto.com/api/v2/store/', {
+            headers: {
+                'lat': coords.lat,
+                'lon': coords.lon,
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+                'platform': 'WEB',
+            },
+        });
+        if (fallbackResponse.ok) {
+            const storeData = await fallbackResponse.json() as { store_id: string };
+            storeId = storeData.store_id;
+        }
+    }
 
     if (!storeId) throw new Error('No Zepto store found for this pincode');
 
-    // 2. Search products
-    const searchResponse = await fetch(`https://api.zeptonow.com/api/v2/search/?query=ps5&store_id=${storeId}`, {
+    // 2. Search products using the new domain
+    const searchResponse = await fetch(`https://www.zepto.com/api/v2/search/?query=ps5&store_id=${storeId}`, {
       headers: {
-        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+        'Accept': 'application/json',
+        'platform': 'WEB',
+        'Referer': 'https://www.zepto.com/search/',
       },
     });
 
@@ -66,7 +110,6 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
 
     for (const p of products) {
       const name = p.name.toLowerCase();
-      // Console/Bundle check
       const isPS5 = name.includes('ps5') || name.includes('playstation 5');
       const isConsole = name.includes('console') || name.includes('slim') || name.includes('bundle') || name.includes('edition');
       const isAccessory = name.includes('controller') || name.includes('dualsense') || name.includes('disk drive') || 
@@ -88,7 +131,7 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
       return {
         inStock: bestMatch.is_available,
         price: bestMatch.mrp ? `₹${bestMatch.mrp}` : null,
-        productUrl: `https://www.zeptonow.com/pn/${bestMatch.slug}/pids/${bestMatch.id}`,
+        productUrl: `https://www.zepto.com/pn/${bestMatch.slug}/pids/${bestMatch.id}`,
         productName: bestMatch.name,
         deliveryTime: bestMatch.eta_minutes ? `${bestMatch.eta_minutes} mins` : '15 mins',
         listingCount: matchCount,
@@ -100,14 +143,18 @@ export async function scrapeZepto(pincode: string): Promise<ScrapeResult> {
       price: null,
       productUrl: url,
       productName: 'PS5 Console',
+      listingCount: products.length,
     };
   } catch (error) {
     console.error('Zepto scraping error:', error);
+    const message = error instanceof Error ? error.message : '';
+    const notServiceable = /store|serviceable|geocode|pincode|API failed|403|404/i.test(message);
     return {
       inStock: false,
       price: null,
       productUrl: url,
       productName: 'PS5 Console',
+      note: notServiceable ? 'Store not available for this pincode' : undefined,
       error: true,
     };
   }
