@@ -65,8 +65,13 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
       });
 
       if (response.ok) {
+        const data = await response.json();
         setStatus('success');
-        setMessage('Alerts Activated!');
+        setMessage(
+          data.status === 'already_active'
+            ? 'You\'re already subscribed!'
+            : 'Check your email to confirm.'
+        );
         trackEvent('subscribe', { pincode });
       } else {
         const data = await response.json();
