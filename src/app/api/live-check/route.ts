@@ -1,7 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { scrapeBlinkit } from '@/lib/scrapers/blinkit';
-import { scrapeZepto } from '@/lib/scrapers/zepto';
 import { scrapeAmazon } from '@/lib/scrapers/amazon';
 import { scrapeFlipkart } from '@/lib/scrapers/flipkart';
 import { scrapeCroma } from '@/lib/scrapers/croma';
@@ -29,16 +27,12 @@ export async function GET(request: Request) {
     // We do NOT update the global database here, because local delivery restrictions
     // for one user's pincode should not overwrite the "National Snapshot".
     const [
-      blinkitResult,
-      zeptoResult,
       amazonResult,
       flipkartResult,
       cromaResult,
       vijaySalesResult,
       relianceResult
     ] = await Promise.all([
-      scrapeBlinkit(validPincode),
-      scrapeZepto(validPincode),
       scrapeAmazon(validPincode),
       scrapeFlipkart(validPincode),
       scrapeCroma(validPincode),
@@ -49,8 +43,6 @@ export async function GET(request: Request) {
     return NextResponse.json({
       pincode: validPincode,
       results: [
-        { platform: 'Blinkit', ...blinkitResult },
-        { platform: 'Zepto', ...zeptoResult },
         { platform: 'Amazon', ...amazonResult },
         { platform: 'Flipkart', ...flipkartResult },
         { platform: 'Croma', ...cromaResult },

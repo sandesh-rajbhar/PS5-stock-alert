@@ -1,4 +1,4 @@
-export type Platform = 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'blinkit' | 'zepto' | 'reliancedigital';
+export type Platform = 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'reliancedigital';
 
 export interface ScrapeResult {
   inStock: boolean;
@@ -7,7 +7,7 @@ export interface ScrapeResult {
   productName: string;
   listingCount?: number;
   error?: boolean;
-  deliveryTime?: string; // For Blinkit/Zepto
+  deliveryTime?: string;
   note?: string; // Surface state like "Store not serviceable here"
 }
 
@@ -32,17 +32,6 @@ export interface StockStatus {
   last_checked: string;
 }
 
-export interface QuickCommerceStock {
-  id: string;
-  platform: 'blinkit' | 'zepto';
-  pincode: string;
-  in_stock: boolean;
-  price: string | null;
-  product_url: string;
-  delivery_time: string | null;
-  last_checked: string;
-}
-
 export interface StockEvent {
   id: string;
   platform: string;
@@ -59,4 +48,5 @@ export interface NotifyParams {
   price: string | null;
   deliveryTime?: string;
   unsubscribeToken: string;
+  telegramChatId?: string | null;
 }

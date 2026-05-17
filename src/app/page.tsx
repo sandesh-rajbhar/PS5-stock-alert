@@ -34,7 +34,7 @@ export default function Home() {
       in_stock: r.inStock,
       price: r.price,
       product_url: r.productUrl,
-      is_pincode_dependent: ['blinkit', 'zepto'].includes(r.platform.toLowerCase()),
+      is_pincode_dependent: false,
       last_checked: new Date().toISOString()
     }));
     setStocks(mappedStocks);
