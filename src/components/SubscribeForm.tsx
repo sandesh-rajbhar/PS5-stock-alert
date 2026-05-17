@@ -2,7 +2,7 @@
 
 import { useState } from 'react';
 import { trackEvent } from '@/lib/analytics';
-import { MapPin, Bell, ExternalLink, CheckCircle, AlertCircle, Loader2, Mail, ArrowRight } from 'lucide-react';
+import { MapPin, Bell, ExternalLink, CheckCircle, AlertCircle, Loader2, Mail, ArrowRight, Send } from 'lucide-react';
 
 type CheckResult = {
   platform: string;
@@ -20,6 +20,8 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
   const [pincode, setPincode] = useState('');
   const [status, setStatus] = useState<'idle' | 'loading' | 'success' | 'error'>('idle');
   const [message, setMessage] = useState('');
+  const [telegramLink, setTelegramLink] = useState<string | null>(null);
+  const [subStatus, setSubStatus] = useState<'pending_confirmation' | 'already_active' | null>(null);
   const [checkResults, setCheckResults] = useState<CheckResult[]>([]);
 
   const handleCheckStock = async (e: React.FormEvent) => {
@@ -67,10 +69,12 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
       if (response.ok) {
         const data = await response.json();
         setStatus('success');
+        setSubStatus(data.status || null);
+        setTelegramLink(data.telegramLink || null);
         setMessage(
           data.status === 'already_active'
             ? 'You\'re already subscribed!'
-            : 'Check your email to confirm.'
+            : 'Almost there — activate alerts below.'
         );
         trackEvent('subscribe', { pincode });
       } else {
@@ -152,7 +156,46 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
 
           <div className="pt-6 border-t border-gray-100 text-center">
             {status === 'success' ? (
-              <div className="bg-green-600 text-white p-4 rounded-2xl font-bold animate-bounce-in">{message}</div>
+              <div className="space-y-4 animate-bounce-in">
+                {subStatus === 'pending_confirmation' ? (
+                  <>
+                    <div className="bg-green-600 text-white p-4 rounded-2xl">
+                      <p className="font-bold text-sm">📧 Confirmation email sent to {email}</p>
+                      <p className="text-xs mt-1 opacity-90">Click the link in the email to activate alerts.</p>
+                    </div>
+                    {telegramLink && (
+                      <div className="relative">
+                        <div className="absolute inset-x-0 -top-2 flex justify-center">
+                          <span className="bg-white text-[10px] font-bold text-gray-400 uppercase tracking-widest px-3">Or — instant alerts</span>
+                        </div>
+                        <a
+                          href={telegramLink}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          onClick={() => trackEvent('telegram_connect_click', { pincode })}
+                          className="w-full ps-button py-3.5 mt-4 inline-flex items-center justify-center gap-2 bg-[#229ED9] hover:bg-[#1c8dc2] text-white font-bold text-sm"
+                        >
+                          <Send className="w-4 h-4" /> Activate via Telegram (one tap)
+                        </a>
+                        <p className="text-[10px] text-gray-400 mt-2">Opens Telegram, links your account, and skips email confirmation.</p>
+                      </div>
+                    )}
+                  </>
+                ) : (
+                  <div className="bg-green-600 text-white p-4 rounded-2xl font-bold">{message}</div>
+                )}
+                {telegramLink && subStatus === 'already_active' && (
+                  <a
+                    href={telegramLink}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    onClick={() => trackEvent('telegram_connect_click', { pincode })}
+                    className="w-full ps-button py-3 inline-flex items-center justify-center gap-2 bg-[#229ED9] hover:bg-[#1c8dc2] text-white font-bold text-sm"
+                  >
+                    <Send className="w-4 h-4" /> Also get alerts on Telegram
+                  </a>
+                )}
+              </div>
             ) : (
               <form onSubmit={handleSubscribe} className="space-y-4">
                 <p className="font-black text-xs sm:text-sm uppercase tracking-tight">Get Email Alerts</p>

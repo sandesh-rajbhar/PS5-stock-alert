@@ -3,6 +3,7 @@ import { z } from 'zod';
 import { randomUUID } from 'crypto';
 import { supabaseAdmin } from '@/lib/supabase';
 import { sendConfirmationEmail } from '@/lib/notifier';
+import { buildConnectLink } from '@/lib/telegram';
 
 const subscribeSchema = z.object({
   email: z.string().email(),
@@ -32,7 +33,8 @@ export async function POST(request: Request) {
         .from('subscribers')
         .update({ pincode })
         .eq('id', existing.id);
-      return NextResponse.json({ success: true, status: 'already_active' });
+      const telegramLink = await buildConnectLink(existing.confirm_token);
+      return NextResponse.json({ success: true, status: 'already_active', telegramLink });
     }
 
     const confirmToken = randomUUID();
@@ -51,9 +53,16 @@ export async function POST(request: Request) {
       if (error) throw error;
     }
 
+    const telegramLink = await buildConnectLink(confirmToken);
+
+    // Fire-and-forget email (best-effort, may fail if Resend not fully set up)
     sendConfirmationEmail(email, confirmToken).catch(console.error);
 
-    return NextResponse.json({ success: true, status: 'pending_confirmation' });
+    return NextResponse.json({
+      success: true,
+      status: 'pending_confirmation',
+      telegramLink,
+    });
   } catch (error) {
     console.error('Subscription error:', error);
     return NextResponse.json({ error: 'Failed to subscribe' }, { status: 500 });
