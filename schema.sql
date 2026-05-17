@@ -1,7 +1,7 @@
 -- Stores each subscriber
 CREATE TABLE subscribers (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
-  email TEXT NOT NULL,
+  email TEXT,                                            -- Nullable: Telegram-only subscribers have no email
   pincode TEXT NOT NULL,
   notify_email BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMP DEFAULT NOW(),
@@ -74,4 +74,5 @@ CREATE POLICY "Public can read quick commerce stock" ON quick_commerce_stock FOR
 ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS confirm_token TEXT DEFAULT gen_random_uuid()::TEXT;
 ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT;
 ALTER TABLE subscribers ALTER COLUMN is_active SET DEFAULT FALSE;
+ALTER TABLE subscribers ALTER COLUMN email DROP NOT NULL;   -- Telegram-only signups have no email
 UPDATE subscribers SET confirm_token = gen_random_uuid()::TEXT WHERE confirm_token IS NULL;
