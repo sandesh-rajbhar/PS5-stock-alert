@@ -55,6 +55,29 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
     }
   };
 
+  const handleTelegramOnly = async () => {
+    if (status === 'loading') return;
+    setStatus('loading');
+    try {
+      const response = await fetch('/api/telegram-init', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ pincode }),
+      });
+      const data = await response.json();
+      if (!response.ok || !data.telegramLink) {
+        throw new Error(data.error || 'Telegram setup unavailable');
+      }
+      trackEvent('telegram_only_click', { pincode });
+      window.open(data.telegramLink, '_blank', 'noopener,noreferrer');
+      setStatus('idle');
+    } catch (error: unknown) {
+      const errorMessage = error instanceof Error ? error.message : 'Something went wrong.';
+      setStatus('error');
+      setMessage(errorMessage);
+    }
+  };
+
   const handleSubscribe = async (e: React.FormEvent) => {
     e.preventDefault();
     setStatus('loading');
@@ -197,24 +220,43 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                 )}
               </div>
             ) : (
-              <form onSubmit={handleSubscribe} className="space-y-4">
-                <p className="font-black text-xs sm:text-sm uppercase tracking-tight">Get Email Alerts</p>
-                <div className="relative flex items-center">
-                  <Mail className="w-5 h-5 text-gray-400 absolute left-4 z-10" />
-                  <input
-                    type="email"
-                    required
-                    placeholder="Enter your email"
-                    className="w-full pl-12 pr-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-blue-600 outline-none transition-all font-bold text-sm sm:text-base"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    disabled={status === 'loading'}
-                  />
-                </div>
-                <button type="submit" className="w-full ps-button ps-button-primary py-4">
-                  {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Notify Me'}
+              <div className="space-y-5">
+                <p className="font-black text-xs sm:text-sm uppercase tracking-tight text-center">Get stock alerts for {pincode}</p>
+
+                <button
+                  type="button"
+                  onClick={handleTelegramOnly}
+                  disabled={status === 'loading'}
+                  className="w-full ps-button py-4 inline-flex items-center justify-center gap-2 bg-[#229ED9] hover:bg-[#1c8dc2] text-white font-bold text-sm disabled:opacity-60"
+                >
+                  {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : <><Send className="w-4 h-4" /> Get alerts on Telegram</>}
                 </button>
-              </form>
+                <p className="text-[10px] text-gray-400 text-center -mt-2">One tap — no email required. Instant push.</p>
+
+                <div className="relative flex items-center my-3">
+                  <div className="flex-grow border-t border-gray-200"></div>
+                  <span className="mx-3 text-[10px] font-bold text-gray-400 uppercase tracking-widest">Or via email</span>
+                  <div className="flex-grow border-t border-gray-200"></div>
+                </div>
+
+                <form onSubmit={handleSubscribe} className="space-y-3">
+                  <div className="relative flex items-center">
+                    <Mail className="w-5 h-5 text-gray-400 absolute left-4 z-10" />
+                    <input
+                      type="email"
+                      required
+                      placeholder="Enter your email"
+                      className="w-full pl-12 pr-6 py-4 bg-gray-50 border-2 border-gray-100 rounded-2xl focus:bg-white focus:border-blue-600 outline-none transition-all font-bold text-sm sm:text-base"
+                      value={email}
+                      onChange={(e) => setEmail(e.target.value)}
+                      disabled={status === 'loading'}
+                    />
+                  </div>
+                  <button type="submit" disabled={status === 'loading'} className="w-full ps-button ps-button-primary py-4">
+                    {status === 'loading' ? <Loader2 className="w-5 h-5 animate-spin" /> : 'Notify Me by Email'}
+                  </button>
+                </form>
+              </div>
             )}
           </div>
         </div>

@@ -15,6 +15,15 @@ export async function sendStockAlert({
 }: NotifyParams) {
   const subject = `🎮 PS5 is BACK IN STOCK on ${platform}!`;
 
+  if (!email) {
+    // Telegram-only subscriber — skip email step entirely.
+    if (telegramChatId) {
+      const tgText = `🎮 <b>PS5 is BACK IN STOCK on ${escapeHtml(platform)}!</b>\n\nPrice: <b>${escapeHtml(price || 'Check the site')}</b>\n\n<a href="${productUrl}">Buy now →</a>\n\nStock goes fast — act now!`;
+      await sendTelegramMessage(telegramChatId, tgText);
+    }
+    return;
+  }
+
   try {
     await resend.emails.send({
       from: process.env.FROM_EMAIL!,

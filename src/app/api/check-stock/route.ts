@@ -10,12 +10,14 @@ import { ScrapeResult } from '@/lib/types';
 
 export const maxDuration = 60;
 
-const PLATFORMS = [
+const CRON_MAX_URLS = 5; // Trim Flipkart/Reliance lists to avoid 403s + keep cron under 10s
+
+const PLATFORMS: { name: string; fn: (pincode: string) => Promise<ScrapeResult> }[] = [
   { name: 'amazon', fn: scrapeAmazon },
-  { name: 'flipkart', fn: scrapeFlipkart },
+  { name: 'flipkart', fn: (p) => scrapeFlipkart(p, { maxUrls: CRON_MAX_URLS }) },
   { name: 'croma', fn: scrapeCroma },
   { name: 'vijaysales', fn: scrapeVijaySales },
-  { name: 'reliancedigital', fn: scrapeRelianceDigital },
+  { name: 'reliancedigital', fn: (p) => scrapeRelianceDigital(p, { maxUrls: CRON_MAX_URLS }) },
 ];
 
 const NATIONAL_BASELINE_PINCODE = '110001';
