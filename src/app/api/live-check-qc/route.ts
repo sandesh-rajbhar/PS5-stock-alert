@@ -1,6 +1,5 @@
 import { NextResponse } from 'next/server';
 import { z } from 'zod';
-import { scrapeBlinkit } from '@/lib/scrapers/blinkit';
 import { scrapeZepto } from '@/lib/scrapers/zepto';
 import { scrapeInstamart } from '@/lib/scrapers/instamart';
 
@@ -24,8 +23,7 @@ export async function POST(request: Request) {
 
     const { lat, lng } = result.data;
 
-    const [blinkit, zepto, instamart] = await Promise.all([
-      scrapeBlinkit(lat, lng),
+    const [zepto, instamart] = await Promise.all([
       scrapeZepto(lat, lng),
       scrapeInstamart(lat, lng),
     ]);
@@ -34,7 +32,6 @@ export async function POST(request: Request) {
       lat,
       lng,
       results: [
-        { platform: 'Blinkit', ...blinkit },
         { platform: 'Zepto', ...zepto },
         { platform: 'Instamart', ...instamart },
       ],
