@@ -46,9 +46,23 @@ export async function scrapeCroma(pincode: string): Promise<ScrapeResult> {
         const title = $('h1.pd-title').text().trim() || $('.pdp-title').text().trim();
         if (!title) return null;
 
-        const isOutOfStock = $('body').text().includes('Out of Stock') || 
-                             $('.btn-not-available').length > 0 ||
-                             $('body').text().includes('Not Deliverable');
+        const bodyText = $('body').text();
+        const addToCart = $('.add-to-cart, .btn-add-to-cart, #pdp-add-to-cart, .pdp-add-to-cart').length > 0 || bodyText.includes('Add to Cart');
+        const buyNow = $('.buy-now, .btn-buy-now, .pdp-buy-now').length > 0 || bodyText.includes('Buy Now');
+        const inStock = (bodyText.includes('In Stock') || bodyText.includes('Available')) && !bodyText.includes('Not Available for your pincode');
+
+        let isOutOfStock = false;
+        
+        // On Croma, "Not Available" for pincode is the most important signal
+        if (bodyText.includes('Not Available for your pincode') || bodyText.includes('Not Deliverable')) {
+          isOutOfStock = true;
+        } else if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else if (bodyText.includes('Out of Stock') || $('.btn-not-available').length > 0) {
+          isOutOfStock = true;
+        } else if (!inStock && bodyText.length > 0) {
+          isOutOfStock = true;
+        }
         
         const rawPrice = $('.pdp-price .amount').first().text().trim() ||
                          $('.cp-price .amount').first().text().trim() ||
