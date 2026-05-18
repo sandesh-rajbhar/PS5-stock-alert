@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import { StockStatus } from '@/lib/types';
 import { trackEvent } from '@/lib/analytics';
-import { ExternalLink, Check, X, MapPin } from 'lucide-react';
+import { ExternalLink, Check, X, MapPin, Gamepad2 } from 'lucide-react';
 
 interface Props {
   status: StockStatus;
