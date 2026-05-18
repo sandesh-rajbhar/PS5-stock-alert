@@ -36,27 +36,41 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
         const $ = cheerio.load(html);
         
         const title = $('#pdp-title').text().trim() || $('.vsprod-title').text().trim();
-        if (!title) return null;
+        if (!title && html.length < 5000) return null;
 
-        const bodyText = $('body').text();
+        const bodyText = html;
+        const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
+        const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
+
         const addToCart = $('.btn-add-to-cart').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('.pdp-add-to-cart').length > 0;
         const buyNow = $('.btn-buy-now').length > 0 || $('button:contains("BUY NOW")').length > 0;
         const notifyMe = $('.btn-notify-me').length > 0 || bodyText.includes('Notify Me');
 
         let isOutOfStock = false;
-        if (addToCart || buyNow) {
+        
+        if (isInStockSchema) {
           isOutOfStock = false;
-        } else if (bodyText.includes('Out of Stock') || notifyMe || addToCart === false) {
+        } else if (isOutOfStockSchema) {
+          isOutOfStock = true;
+        } else if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else if (notifyMe) {
+          isOutOfStock = true;
+        } else {
           isOutOfStock = true;
         }
         
-        const rawPrice = $('.pdp-price').first().text().trim() ||
-                         $('.vsprod-price').first().text().trim() ||
-                         $('[class*="price"]').first().text().trim();
-        const priceMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/) || rawPrice.match(/[\d,]{4,}(?:\.\d+)?/);
-        const price = priceMatch
-          ? (priceMatch[0].startsWith('₹') ? priceMatch[0].replace(/\s+/g, '') : `₹${priceMatch[0]}`)
-          : '';
+        // Extract price from Schema.org if possible
+        const priceMatchSchema = bodyText.match(/"price":\s*"(\d+)"/);
+        let price = '';
+        if (priceMatchSchema) {
+          price = `₹${parseInt(priceMatchSchema[1]).toLocaleString('en-IN')}`;
+        } else {
+          const rawPrice = $('.pdp-price').first().text().trim() ||
+                           $('.vsprod-price').first().text().trim();
+          const pMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/);
+          price = pMatch ? pMatch[0].replace(/\s+/g, '') : '';
+        }
 
         return {
           title,

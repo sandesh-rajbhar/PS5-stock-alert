@@ -68,22 +68,30 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         const $ = cheerio.load(html);
         
         const title = $('.B_NuCI').text().trim() || $('h1').first().text().trim();
-        if (!title) return null;
+        if (!title && html.length < 5000) return null;
+
+        const bodyText = html;
+        const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
+        const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
 
         const addToCart = $('button._2KpZ6l._2U9u96').length > 0 || $('.row._10S6vX').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('button:contains("Add to Cart")').length > 0;
         const buyNow = $('button._2KpZ6l._20p_ns').length > 0 || $('button:contains("BUY NOW")').length > 0 || $('button:contains("Buy Now")').length > 0;
         const notifyMe = $('button:contains("NOTIFY ME")').length > 0 || $('button:contains("Notify Me")').length > 0;
-        const soldOut = $('body').text().includes('Sold Out') || $('._16FRp0').text().includes('Sold Out');
-        
+
         let isOutOfStock = false;
-        if (addToCart || buyNow) {
+
+        if (isInStockSchema) {
           isOutOfStock = false;
-        } else if (notifyMe || soldOut || $('body').text().includes('Currently unavailable') || $('body').text().includes('Not Deliverable')) {
+        } else if (isOutOfStockSchema) {
+          isOutOfStock = true;
+        } else if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else if (notifyMe) {
           isOutOfStock = true;
         } else {
-          // Fallback if none of the above specific markers are found
           isOutOfStock = true;
         }
+
         
         const rawPrice = $('._30jeq3._16Jk6d').first().text().trim() ||
                          $('._30jeq3').first().text().trim() ||
