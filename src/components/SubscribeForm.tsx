@@ -149,32 +149,40 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
             <div className="flex-grow border-t border-gray-200"></div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-3 gap-2">
+            <a
+              href="https://blinkit.com/prn/sony-ps5-console-slim/prid/547392"
+              target="_blank"
+              rel="noopener noreferrer"
+              onClick={() => trackEvent('qc_deeplink', { platform: 'blinkit' })}
+              className="ps-button py-3 inline-flex items-center justify-center gap-1.5 bg-yellow-300 hover:bg-yellow-400 text-black font-bold text-[10px]"
+            >
+              <ExternalLink className="w-3 h-3" /> Blinkit
+            </a>
             <a
               href="https://www.zepto.com/cn/electronics-appliances/ps5/cid/5c3d33b8-f346-4ade-9eeb-98ed6c409dd3/scid/7d29933e-06f5-43cb-9f5a-7eda3b18bc4f"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent('qc_deeplink', { platform: 'zepto' })}
-              className="ps-button py-3 inline-flex items-center justify-center gap-2 bg-violet-600 hover:bg-violet-700 text-white font-bold text-xs"
+              className="ps-button py-3 inline-flex items-center justify-center gap-1.5 bg-violet-600 hover:bg-violet-700 text-white font-bold text-[10px]"
             >
-              <ExternalLink className="w-3.5 h-3.5" /> Check Zepto
+              <ExternalLink className="w-3 h-3" /> Zepto
             </a>
             <a
               href="https://www.swiggy.com/instamart/p/sony-ps5-1tb-slim-cd-version-single-controller-console-BDFUT1SDIF"
               target="_blank"
               rel="noopener noreferrer"
               onClick={() => trackEvent('qc_deeplink', { platform: 'instamart' })}
-              className="ps-button py-3 inline-flex items-center justify-center gap-2 bg-orange-500 hover:bg-orange-600 text-white font-bold text-xs"
+              className="ps-button py-3 inline-flex items-center justify-center gap-1.5 bg-orange-500 hover:bg-orange-600 text-white font-bold text-[10px]"
             >
-              <ExternalLink className="w-3.5 h-3.5" /> Check Instamart
+              <ExternalLink className="w-3 h-3" /> Instamart
             </a>
           </div>
           <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-[10px] text-amber-800 leading-relaxed -mt-2">
             <p className="font-bold mb-1">⚠ No alerts for quick-commerce</p>
             <p>
-              Zepto and Instamart route stock by your exact darkstore — we can&apos;t check or alert
-              from our servers. Tap above to check directly on their site. Add to wishlist there
-              for native notifications.
+              Blinkit, Zepto, and Instamart route stock by your exact darkstore — we can&apos;t check or alert
+              from our servers. Tap above to check directly on their site.
             </p>
           </div>
         </form>

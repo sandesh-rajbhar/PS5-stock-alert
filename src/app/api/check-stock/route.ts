@@ -122,6 +122,8 @@ export async function GET(request: Request) {
   const secret = searchParams.get('secret');
   const authHeader = request.headers.get('Authorization');
   const bearerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  const listMode = searchParams.get('list') === 'true';
+  const targetPincode = searchParams.get('pincode');
 
   if (secret !== process.env.CRON_SECRET && bearerToken !== process.env.CRON_SECRET) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
@@ -134,18 +136,39 @@ export async function GET(request: Request) {
       .eq('is_active', true);
 
     const subscriberPincodes = Array.from(new Set(pincodesData?.map(p => p.pincode) || []));
-    const pincodesToCheck = Array.from(new Set([NATIONAL_BASELINE_PINCODE, ...subscriberPincodes]));
+    let pincodesToCheck = Array.from(new Set([NATIONAL_BASELINE_PINCODE, ...subscriberPincodes]));
 
-    await Promise.all(
-      pincodesToCheck.map(pincode =>
-        processPincode(pincode, pincode === NATIONAL_BASELINE_PINCODE)
-      )
-    );
+    if (listMode) {
+      return NextResponse.json(pincodesToCheck);
+    }
+
+    if (targetPincode) {
+      await processPincode(targetPincode, targetPincode === NATIONAL_BASELINE_PINCODE);
+      return NextResponse.json({ success: true, pincode: targetPincode });
+    }
+
+    // cron-job.org / Vercel Hobby fix: 
+    // 1. Shuffle to ensure fair coverage across runs if we timeout
+    pincodesToCheck = pincodesToCheck.sort(() => Math.random() - 0.5);
+
+    const startTime = Date.now();
+    const checked = [];
+    
+    for (const pincode of pincodesToCheck) {
+      // 2. Stop if we approach the 30s limit (safety buffer at 25s)
+      if (Date.now() - startTime > 25000) {
+        console.warn('Approaching 30s timeout, stopping early');
+        break;
+      }
+      await processPincode(pincode, pincode === NATIONAL_BASELINE_PINCODE);
+      checked.push(pincode);
+    }
 
     return NextResponse.json({
       success: true,
-      checked_pincodes: pincodesToCheck.length,
-      subscriber_pincodes: subscriberPincodes.length,
+      total_active_pincodes: pincodesToCheck.length,
+      checked_count: checked.length,
+      checked_pincodes: checked,
     });
   } catch (error) {
     console.error('Check stock error:', error);

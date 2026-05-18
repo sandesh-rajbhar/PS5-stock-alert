@@ -1,0 +1,50 @@
+name: stock-check
+
+on:
+  schedule:
+    - cron: '*/15 * * * *'
+  workflow_dispatch:
+
+concurrency:
+  group: stock-check
+  cancel-in-progress: false
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      pincodes: ${{ steps.get-pincodes.outputs.pincodes }}
+    steps:
+      - name: Fetch Pincodes
+        id: get-pincodes
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ENDPOINT: ${{ secrets.CHECK_STOCK_URL }}
+        run: |
+          if [ -z "$ENDPOINT" ] || [ -z "$CRON_SECRET" ]; then
+            echo "Missing CHECK_STOCK_URL or CRON_SECRET secret"
+            exit 1
+          fi
+          # Fetch JSON array of pincodes: ["110001", "400001", ...]
+          PINCODES=$(curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$ENDPOINT?list=true")
+          echo "pincodes=$PINCODES" >> $GITHUB_OUTPUT
+
+  check:
+    needs: setup
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        pincode: ${{ fromJson(needs.setup.outputs.pincodes) }}
+      max-parallel: 5
+      fail-fast: false
+    steps:
+      - name: Hit /api/check-stock
+        env:
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+          ENDPOINT: ${{ secrets.CHECK_STOCK_URL }}
+        run: |
+          curl -fsS --max-time 60 \
+            -H "Authorization: Bearer $CRON_SECRET" \
+            "$ENDPOINT?pincode=${{ matrix.pincode }}" \
+            -o response.json -w "Pincode ${{ matrix.pincode }}: HTTP %{http_code} in %{time_total}s\n"
+          cat response.json
