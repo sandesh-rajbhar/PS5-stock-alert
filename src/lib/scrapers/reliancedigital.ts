@@ -58,6 +58,8 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         if (!title && html.length < 5000) return null;
 
         const bodyText = html;
+        const mainPdpText = $('#root').text() || bodyText; // Try to target main content
+        
         const addToCart = $('.pdp__addtoCart').length > 0 || 
                           $('#add-to-cart').length > 0 || 
                           bodyText.includes('ADD TO CART') || 
@@ -70,7 +72,9 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         // Reliance uses Schema.org JSON-LD, but sometimes it says InStock while restricted by pincode
         const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
         const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
-        const currentlyUnavailable = bodyText.toLowerCase().includes('currently unavailable');
+        
+        // Only trigger OOS if we DON'T see Add to Cart buttons AND see the unavailable text
+        const currentlyUnavailable = bodyText.toLowerCase().includes('currently unavailable') && !addToCart && !buyNow;
 
         let isOutOfStock = false;
         
