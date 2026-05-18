@@ -67,8 +67,8 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
 
         const availabilityText = $('#availability').text().trim().toLowerCase();
         const outOfStockDiv = $('#outOfStock').length > 0;
-        const addToCart = $('#add-to-cart-button').length > 0;
-        const buyNow = $('#buy-now-button').length > 0;
+        const addToCart = $('#add-to-cart-button').length > 0 || $('#add-to-cart-button-ubb').length > 0 || $('input[name="submit.add-to-cart"]').length > 0;
+        const buyNow = $('#buy-now-button').length > 0 || $('input[name="submit.buy-now"]').length > 0;
         const inStockText = availabilityText.includes('in stock') || availabilityText.includes('available');
         
         // If we see Add to Cart or Buy Now, it's definitely IN STOCK regardless of text

@@ -38,9 +38,17 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
         const title = $('#pdp-title').text().trim() || $('.vsprod-title').text().trim();
         if (!title) return null;
 
-        const isOutOfStock = $('body').text().includes('Out of Stock') || 
-                             $('.btn-notify-me').length > 0 || 
-                             $('.btn-add-to-cart').length === 0;
+        const bodyText = $('body').text();
+        const addToCart = $('.btn-add-to-cart').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('.pdp-add-to-cart').length > 0;
+        const buyNow = $('.btn-buy-now').length > 0 || $('button:contains("BUY NOW")').length > 0;
+        const notifyMe = $('.btn-notify-me').length > 0 || bodyText.includes('Notify Me');
+
+        let isOutOfStock = false;
+        if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else if (bodyText.includes('Out of Stock') || notifyMe || addToCart === false) {
+          isOutOfStock = true;
+        }
         
         const rawPrice = $('.pdp-price').first().text().trim() ||
                          $('.vsprod-price').first().text().trim() ||

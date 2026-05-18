@@ -57,9 +57,17 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         const title = $('.pdp__title').text().trim();
         if (!title) return null;
 
-        const isOutOfStock = $('body').text().includes('Out of Stock') || 
-                             $('.pdp__notifyMe').length > 0 || 
-                             $('.pdp__addtoCart').length === 0;
+        const bodyText = $('body').text();
+        const addToCart = $('.pdp__addtoCart').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('button:contains("Add to Cart")').length > 0;
+        const buyNow = $('button:contains("BUY NOW")').length > 0 || $('button:contains("Buy Now")').length > 0;
+        const notifyMe = $('.pdp__notifyMe').length > 0 || bodyText.includes('Notify Me');
+
+        let isOutOfStock = false;
+        if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else if (bodyText.includes('Out of Stock') || notifyMe || addToCart === false) {
+          isOutOfStock = true;
+        }
         
         const rawPrice = $('.pdp__priceSection .sc-bxivhb').first().text().trim() ||
                          $('.pdp__priceSection').first().text().trim() ||
