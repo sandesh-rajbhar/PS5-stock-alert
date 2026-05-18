@@ -54,6 +54,7 @@ async function processPincode(pincode: string, isBaseline: boolean) {
           price: result.price,
           product_url: result.productUrl,
           delivery_time: result.deliveryTime,
+          available_items: result.items,
           last_checked: new Date().toISOString(),
         },
         { onConflict: 'platform,pincode' }
@@ -67,6 +68,7 @@ async function processPincode(pincode: string, isBaseline: boolean) {
               in_stock: result.inStock,
               price: result.price,
               product_url: result.productUrl,
+              available_items: result.items,
               last_checked: new Date().toISOString(),
             },
             { onConflict: 'platform' }

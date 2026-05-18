@@ -71,6 +71,33 @@ export default function StockStatusCard({ status }: Props) {
               ? 'Darkstore stock'
               : 'Local Area Stock'}
         </div>
+
+        {/* Multiple Items Support */}
+        {isAvailable && status.available_items && status.available_items.length > 1 && (
+          <div className="mt-6 pt-4 border-t border-gray-100">
+            <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest mb-3">Other available versions</p>
+            <div className="space-y-3 max-h-48 overflow-y-auto pr-2 custom-scrollbar">
+              {status.available_items
+                .filter(item => item.url !== status.product_url)
+                .map((item, idx) => (
+                <div key={idx} className="flex flex-col gap-1 p-2.5 rounded-lg bg-gray-50 border border-gray-100">
+                  <div className="flex justify-between items-start gap-2">
+                    <span className="text-[11px] font-bold text-slate-800 line-clamp-1">{item.name}</span>
+                    <span className="text-[11px] font-black text-blue-600 shrink-0">{item.price}</span>
+                  </div>
+                  <a 
+                    href={item.url} 
+                    target="_blank" 
+                    rel="noopener noreferrer"
+                    className="text-[10px] font-black text-blue-600 uppercase flex items-center hover:underline mt-1"
+                  >
+                    Buy this version <ExternalLink className="w-2.5 h-2.5 ml-1" />
+                  </a>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Action */}

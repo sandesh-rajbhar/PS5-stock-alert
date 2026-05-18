@@ -128,12 +128,19 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     });
 
     const results = await Promise.allSettled(fetchPromises);
+    const availableItems: any[] = [];
 
-    // Evaluate results to find the best match (prioritizing in-stock)
+    // Evaluate results to find the best match and collect all available items
     for (const result of results) {
       if (result.status === 'fulfilled' && result.value) {
         const item = result.value;
         if (!item.isOutOfStock && item.price) {
+          availableItems.push({
+            name: item.title,
+            url: item.url,
+            price: item.price,
+            inStock: true
+          });
           if (!bestMatch || bestMatch.isOutOfStock) {
             bestMatch = item;
           }
@@ -150,6 +157,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         productUrl: productUrls[0],
         productName: nameFromUrl(productUrls[0]),
         listingCount: matchCount,
+        items: [],
       };
     }
 
@@ -159,6 +167,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
       productUrl: bestMatch.url,
       productName: bestMatch.title,
       listingCount: matchCount,
+      items: availableItems,
     };
   } catch (error) {
     console.error('Amazon localized scraping error:', error);

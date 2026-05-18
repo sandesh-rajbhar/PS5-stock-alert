@@ -83,11 +83,18 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
     });
 
     const results = await Promise.allSettled(fetchPromises);
+    const availableItems: any[] = [];
 
     for (const result of results) {
       if (result.status === 'fulfilled' && result.value) {
         const item = result.value;
         if (!item.isOutOfStock && item.price) {
+          availableItems.push({
+            name: item.title,
+            url: item.url,
+            price: item.price,
+            inStock: true
+          });
           if (!bestMatch || bestMatch.isOutOfStock) {
             bestMatch = item;
           }
@@ -104,6 +111,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
         productUrl: productUrls[0],
         productName: nameFromUrl(productUrls[0]),
         listingCount: matchCount,
+        items: [],
       };
     }
 
@@ -113,6 +121,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
       productUrl: bestMatch.url,
       productName: bestMatch.title,
       listingCount: matchCount,
+      items: availableItems,
     };
   } catch (error) {
     console.error('Vijay Sales localized scraping error:', error);

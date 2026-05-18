@@ -1,10 +1,18 @@
 export type Platform = 'amazon' | 'flipkart' | 'croma' | 'vijaysales' | 'reliancedigital' | 'blinkit' | 'zepto' | 'instamart';
 
+export interface ProductItem {
+  name: string;
+  url: string;
+  price: string | null;
+  inStock: boolean;
+}
+
 export interface ScrapeResult {
   inStock: boolean;
   price: string | null;
   productUrl: string;
   productName: string;
+  items?: ProductItem[];
   listingCount?: number;
   error?: boolean;
   deliveryTime?: string;
@@ -28,6 +36,7 @@ export interface StockStatus {
   in_stock: boolean;
   price: string | null;
   product_url: string;
+  available_items?: ProductItem[];
   is_pincode_dependent: boolean;
   is_location_dependent?: boolean;
   note?: string;
