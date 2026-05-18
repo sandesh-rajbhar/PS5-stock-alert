@@ -67,13 +67,16 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
                         bodyText.includes('BUY NOW') || 
                         bodyText.includes('Buy Now');
 
-        // Reliance uses Schema.org JSON-LD
+        // Reliance uses Schema.org JSON-LD, but sometimes it says InStock while restricted by pincode
         const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
         const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
+        const currentlyUnavailable = bodyText.toLowerCase().includes('currently unavailable');
 
         let isOutOfStock = false;
         
-        if (isInStockSchema) {
+        if (currentlyUnavailable) {
+          isOutOfStock = true;
+        } else if (isInStockSchema) {
           isOutOfStock = false;
         } else if (isOutOfStockSchema) {
           isOutOfStock = true;
