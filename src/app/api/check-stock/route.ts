@@ -147,29 +147,7 @@ export async function GET(request: Request) {
       return NextResponse.json({ success: true, pincode: targetPincode });
     }
 
-    // cron-job.org / Vercel Hobby fix: 
-    // 1. Shuffle to ensure fair coverage across runs if we timeout
-    pincodesToCheck = pincodesToCheck.sort(() => Math.random() - 0.5);
-
-    const startTime = Date.now();
-    const checked = [];
-    
-    for (const pincode of pincodesToCheck) {
-      // 2. Stop if we approach the 30s limit (safety buffer at 25s)
-      if (Date.now() - startTime > 25000) {
-        console.warn('Approaching 30s timeout, stopping early');
-        break;
-      }
-      await processPincode(pincode, pincode === NATIONAL_BASELINE_PINCODE);
-      checked.push(pincode);
-    }
-
-    return NextResponse.json({
-      success: true,
-      total_active_pincodes: pincodesToCheck.length,
-      checked_count: checked.length,
-      checked_pincodes: checked,
-    });
+    return NextResponse.json({ error: 'Missing pincode or list parameter' }, { status: 400 });
   } catch (error) {
     console.error('Check stock error:', error);
     return NextResponse.json({ error: 'Internal server error' }, { status: 500 });
