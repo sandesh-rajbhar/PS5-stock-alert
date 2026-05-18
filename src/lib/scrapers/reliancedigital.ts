@@ -69,21 +69,24 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
                         bodyText.includes('BUY NOW') || 
                         bodyText.includes('Buy Now');
 
-        // Reliance uses Schema.org JSON-LD, but sometimes it says InStock while restricted by pincode
+        // Reliance uses Schema.org JSON-LD.
+        // NOTE: We ignore the generic toast message string "Article Currently Unavailable" which is always present in the HTML config.
         const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
         const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
         
-        // Only trigger OOS if we DON'T see Add to Cart buttons AND see the unavailable text
-        const currentlyUnavailable = bodyText.toLowerCase().includes('currently unavailable') && !addToCart && !buyNow;
+        // Real OOS indicators on Reliance usually appear in specific divs or larger text blocks
+        // We look for the text but EXCLUDE the generic toast message property
+        const bodyWithoutConfig = bodyText.replace('"restricted_articles_toast_message":"Article Currently Unavailable"', '');
+        const currentlyUnavailable = bodyWithoutConfig.toLowerCase().includes('currently unavailable') && !addToCart && !buyNow;
 
         let isOutOfStock = false;
         
         if (currentlyUnavailable) {
           isOutOfStock = true;
-        } else if (isInStockSchema) {
-          isOutOfStock = false;
         } else if (isOutOfStockSchema) {
           isOutOfStock = true;
+        } else if (isInStockSchema) {
+          isOutOfStock = false;
         } else if (addToCart || buyNow) {
           isOutOfStock = false;
         } else {
