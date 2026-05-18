@@ -14,10 +14,10 @@ const CRON_MAX_URLS = 5; // Trim Flipkart/Reliance lists to avoid 403s + keep cr
 
 const PLATFORMS: { name: string; fn: (pincode: string) => Promise<ScrapeResult> }[] = [
   { name: 'amazon', fn: scrapeAmazon },
-  { name: 'flipkart', fn: (p) => scrapeFlipkart(p, { maxUrls: CRON_MAX_URLS }) },
+  { name: 'flipkart', fn: scrapeFlipkart },
   { name: 'croma', fn: scrapeCroma },
   { name: 'vijaysales', fn: scrapeVijaySales },
-  { name: 'reliancedigital', fn: (p) => scrapeRelianceDigital(p, { maxUrls: CRON_MAX_URLS }) },
+  { name: 'reliancedigital', fn: scrapeRelianceDigital },
 ];
 
 const NATIONAL_BASELINE_PINCODE = '110001';

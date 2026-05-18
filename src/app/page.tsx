@@ -15,7 +15,47 @@ export default function Home() {
     fetch('/api/stock-status')
       .then((res) => res.json())
       .then((data) => {
-        if (Array.isArray(data)) setStocks(data);
+        if (Array.isArray(data)) {
+          const qcLinks: StockStatus[] = [
+            {
+              id: 'qc-blinkit',
+              platform: 'blinkit',
+              product_name: 'Check on App',
+              in_stock: true,
+              price: '---',
+              product_url: 'https://blinkit.com/s/?q=ps5',
+              is_pincode_dependent: false,
+              is_location_dependent: true,
+              note: 'Deep link only',
+              last_checked: new Date().toISOString()
+            },
+            {
+              id: 'qc-zepto',
+              platform: 'zepto',
+              product_name: 'Check on App',
+              in_stock: true,
+              price: '---',
+              product_url: 'https://www.zeptonow.com/search?query=ps5',
+              is_pincode_dependent: false,
+              is_location_dependent: true,
+              note: 'Deep link only',
+              last_checked: new Date().toISOString()
+            },
+            {
+              id: 'qc-instamart',
+              platform: 'instamart',
+              product_name: 'Check on App',
+              in_stock: true,
+              price: '---',
+              product_url: 'https://www.swiggy.com/instamart/search?query=ps5',
+              is_pincode_dependent: false,
+              is_location_dependent: true,
+              note: 'Deep link only',
+              last_checked: new Date().toISOString()
+            }
+          ];
+          setStocks([...data, ...qcLinks]);
+        }
         setLoading(false);
       })
       .catch((err) => {
@@ -26,8 +66,7 @@ export default function Home() {
 
   const handleStockUpdate = (pincode: string, results: any[]) => {
     setSearchPincode(pincode);
-    // Convert live-check results to StockStatus format for the cards
-    const qcPlatforms = ['blinkit', 'zepto', 'instamart'];
+    
     const mappedStocks: StockStatus[] = results.map((r, i) => {
       const platform = r.platform.toLowerCase();
       return {
@@ -37,13 +76,54 @@ export default function Home() {
         in_stock: r.inStock,
         price: r.price,
         product_url: r.productUrl,
-        is_pincode_dependent: false,
-        is_location_dependent: qcPlatforms.includes(platform),
+        is_pincode_dependent: true,
+        is_location_dependent: false,
         note: r.note,
         last_checked: new Date().toISOString()
       };
     });
-    setStocks(mappedStocks);
+
+    // Add static QC deep links
+    const qcLinks: StockStatus[] = [
+      {
+        id: 'qc-blinkit',
+        platform: 'blinkit',
+        product_name: 'Check on App',
+        in_stock: true,
+        price: '---',
+        product_url: 'https://blinkit.com/s/?q=ps5',
+        is_pincode_dependent: false,
+        is_location_dependent: true,
+        note: 'Deep link only',
+        last_checked: new Date().toISOString()
+      },
+      {
+        id: 'qc-zepto',
+        platform: 'zepto',
+        product_name: 'Check on App',
+        in_stock: true,
+        price: '---',
+        product_url: 'https://www.zeptonow.com/search?query=ps5',
+        is_pincode_dependent: false,
+        is_location_dependent: true,
+        note: 'Deep link only',
+        last_checked: new Date().toISOString()
+      },
+      {
+        id: 'qc-instamart',
+        platform: 'instamart',
+        product_name: 'Check on App',
+        in_stock: true,
+        price: '---',
+        product_url: 'https://www.swiggy.com/instamart/search?query=ps5',
+        is_pincode_dependent: false,
+        is_location_dependent: true,
+        note: 'Deep link only',
+        last_checked: new Date().toISOString()
+      }
+    ];
+
+    setStocks([...mappedStocks, ...qcLinks]);
   };
 
   return (
