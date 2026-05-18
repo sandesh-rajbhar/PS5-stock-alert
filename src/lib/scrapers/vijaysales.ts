@@ -42,20 +42,19 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
         const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
         const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
 
-        const addToCart = $('.btn-add-to-cart').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('.pdp-add-to-cart').length > 0;
-        const buyNow = $('.btn-buy-now').length > 0 || $('button:contains("BUY NOW")').length > 0;
-        const notifyMe = $('.btn-notify-me').length > 0 || bodyText.includes('Notify Me');
+        const addToCart = $('.btn-add-to-cart').length > 0 || bodyText.includes('ADD TO CART') || bodyText.includes('Add to Cart');
+        const buyNow = $('.btn-buy-now').length > 0 || bodyText.includes('BUY NOW') || bodyText.includes('Buy Now');
+        const notifyMe = $('.btn-notify-me').length > 0 || bodyText.includes('Notify Me') || bodyText.includes('NOTIFY ME');
+        const currentlyUnavailable = bodyText.includes('Currently unavailable') || bodyText.includes('Currently Unavailable');
 
         let isOutOfStock = false;
         
         if (isInStockSchema) {
           isOutOfStock = false;
-        } else if (isOutOfStockSchema) {
+        } else if (isOutOfStockSchema || currentlyUnavailable || notifyMe) {
           isOutOfStock = true;
         } else if (addToCart || buyNow) {
           isOutOfStock = false;
-        } else if (notifyMe) {
-          isOutOfStock = true;
         } else {
           isOutOfStock = true;
         }
