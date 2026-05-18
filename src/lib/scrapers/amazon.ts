@@ -10,8 +10,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     'https://www.amazon.in/Sony-PlayStation%C2%AE5-Digital-Edition-slim/dp/B0CY5QW186',
     'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0FNS22DLT',
     'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0CY5HVDS2',
-    'https://www.amazon.in/Sony-PlayStation%C2%AE5-Console-Disc-Edition/dp/B0FF9NXYDL',
-    'https://www.amazon.in/dp/B0DT9P4G9K'
+    'https://www.amazon.in/Sony-PlayStation%C2%AE5-Console-Disc-Edition/dp/B0FF9NXYDL'
   ];
   
   const addressUrl = 'https://www.amazon.in/gp/delivery/ajax/address-change.html';
