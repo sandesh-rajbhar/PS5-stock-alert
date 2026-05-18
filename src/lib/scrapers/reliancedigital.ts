@@ -58,9 +58,20 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         if (!title) return null;
 
         const bodyText = $('body').text();
-        const addToCart = $('.pdp__addtoCart').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('button:contains("Add to Cart")').length > 0;
-        const buyNow = $('button:contains("BUY NOW")').length > 0 || $('button:contains("Buy Now")').length > 0;
-        const notifyMe = $('.pdp__notifyMe').length > 0 || bodyText.includes('Notify Me');
+        const addToCart = $('.pdp__addtoCart').length > 0 || 
+                          $('#add-to-cart').length > 0 || 
+                          $('button:contains("ADD TO CART")').length > 0 || 
+                          $('button:contains("Add to Cart")').length > 0 ||
+                          $('.add-to-cart').length > 0;
+                          
+        const buyNow = $('.pdp__buyNow').length > 0 || 
+                        $('button:contains("BUY NOW")').length > 0 || 
+                        $('button:contains("Buy Now")').length > 0 ||
+                        $('.buy-now').length > 0;
+                        
+        const notifyMe = $('.pdp__notifyMe').length > 0 || 
+                         bodyText.includes('Notify Me') || 
+                         $('button:contains("NOTIFY ME")').length > 0;
 
         let isOutOfStock = false;
         if (addToCart || buyNow) {
