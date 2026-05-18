@@ -76,7 +76,7 @@ export default function Home() {
         in_stock: r.inStock,
         price: r.price,
         product_url: r.productUrl,
-        is_pincode_dependent: true,
+        is_pincode_dependent: ['amazon', 'flipkart', 'croma'].includes(platform),
         is_location_dependent: false,
         note: r.note,
         last_checked: new Date().toISOString()

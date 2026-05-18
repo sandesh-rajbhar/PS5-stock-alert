@@ -43,16 +43,12 @@ export default function StockStatusCard({ status }: Props) {
               ? 'bg-blue-100 text-blue-700'
               : isAvailable
                 ? 'bg-green-100 text-green-700'
-                : status.note
-                  ? 'bg-amber-100 text-amber-700'
-                  : 'bg-red-100 text-red-700'
+                : 'bg-red-100 text-red-700'
           }`}>
             {isDeepLinkOnly ? (
               <span className="flex items-center"><Gamepad2 className="w-3 h-3 mr-1" /> Link</span>
             ) : isAvailable ? (
               <span className="flex items-center"><Check className="w-3 h-3 mr-1" /> Stock</span>
-            ) : status.note ? (
-              <span className="flex items-center"><MapPin className="w-3 h-3 mr-1" /> N/A here</span>
             ) : (
               <span className="flex items-center"><X className="w-3 h-3 mr-1" /> Out</span>
             )}
@@ -69,18 +65,18 @@ export default function StockStatusCard({ status }: Props) {
         <div className={`mt-5 flex items-center text-[10px] font-black px-3 py-1.5 rounded-lg w-fit uppercase tracking-wider ${
           isDeepLinkOnly
             ? 'text-blue-700 bg-blue-50'
-            : !isAvailable && status.note
-              ? 'text-amber-700 bg-amber-50'
-              : 'text-blue-600 bg-blue-50'
+            : isAvailable
+              ? 'text-blue-600 bg-blue-50'
+              : 'text-gray-500 bg-gray-100'
         }`}>
           <MapPin className="w-3 h-3 mr-1.5" />
           {isDeepLinkOnly
             ? 'Hyperlocal Delivery'
-            : !isAvailable && status.note
-              ? status.note
-              : status.is_location_dependent
-                ? 'Darkstore stock'
-                : 'Local Area Stock'}
+            : status.is_location_dependent
+              ? 'Darkstore stock'
+              : status.is_pincode_dependent
+                ? 'Local Area Stock'
+                : 'National Stock'}
         </div>
 
         {/* Multiple Items Support */}
