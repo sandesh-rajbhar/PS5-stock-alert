@@ -27,6 +27,7 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
     'https://www.reliancedigital.in/product/sony-ps5-standard-d-chassis-gaming-console-fc26-bundle-mia2lh-9604025',
     'https://www.reliancedigital.in/product/sony-playstation-5-standard-e-chassis-ds-bundle-gaming-console-mn359o-9991585',
     'https://www.reliancedigital.in/product/sony-playstation-5-digital-e-chassis-gaming-console-mn357x-9991584',
+    'https://www.reliancedigital.in/product/sony-ps5-standard-sa-e-chassis-gaming-console-mmeqbt-9974618?internal_source=search_results',
     'https://www.reliancedigital.in/product/sony-ps5-standard-sa-e-chassis-gaming-console-mmeqbt-9974618'
   ];
 
@@ -54,39 +55,46 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         const html = await response.text();
         const $ = cheerio.load(html);
         
-        const title = $('.pdp__title').text().trim();
-        if (!title) return null;
+        const title = $('.pdp__title').text().trim() || $('title').text().replace('Buy ', '').split(' at Reliance')[0].trim();
+        if (!title && html.length < 5000) return null;
 
-        const bodyText = $('body').text();
+        const bodyText = html;
         const addToCart = $('.pdp__addtoCart').length > 0 || 
                           $('#add-to-cart').length > 0 || 
-                          $('button:contains("ADD TO CART")').length > 0 || 
-                          $('button:contains("Add to Cart")').length > 0 ||
-                          $('.add-to-cart').length > 0;
+                          bodyText.includes('ADD TO CART') || 
+                          bodyText.includes('Add to Cart');
                           
         const buyNow = $('.pdp__buyNow').length > 0 || 
-                        $('button:contains("BUY NOW")').length > 0 || 
-                        $('button:contains("Buy Now")').length > 0 ||
-                        $('.buy-now').length > 0;
-                        
-        const notifyMe = $('.pdp__notifyMe').length > 0 || 
-                         bodyText.includes('Notify Me') || 
-                         $('button:contains("NOTIFY ME")').length > 0;
+                        bodyText.includes('BUY NOW') || 
+                        bodyText.includes('Buy Now');
+
+        // Reliance uses Schema.org JSON-LD
+        const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
+        const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
 
         let isOutOfStock = false;
-        if (addToCart || buyNow) {
+        
+        if (isInStockSchema) {
           isOutOfStock = false;
-        } else if (bodyText.includes('Out of Stock') || notifyMe || addToCart === false) {
+        } else if (isOutOfStockSchema) {
+          isOutOfStock = true;
+        } else if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else {
           isOutOfStock = true;
         }
         
-        const rawPrice = $('.pdp__priceSection .sc-bxivhb').first().text().trim() ||
-                         $('.pdp__priceSection').first().text().trim() ||
-                         $('[class*="price"]').first().text().trim();
-        const priceMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/) || rawPrice.match(/[\d,]{4,}(?:\.\d+)?/);
-        const price = priceMatch
-          ? (priceMatch[0].startsWith('₹') ? priceMatch[0].replace(/\s+/g, '') : `₹${priceMatch[0]}`)
-          : '';
+        // Extract price from Schema.org if possible
+        const priceMatchSchema = bodyText.match(/"price":\s*"(\d+)"/);
+        let price = '';
+        if (priceMatchSchema) {
+          price = `₹${parseInt(priceMatchSchema[1]).toLocaleString('en-IN')}`;
+        } else {
+          const rawPrice = $('.pdp__priceSection .sc-bxivhb').first().text().trim() ||
+                           $('.pdp__priceSection').first().text().trim();
+          const pMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/);
+          price = pMatch ? pMatch[0].replace(/\s+/g, '') : '';
+        }
 
         return {
           title,
