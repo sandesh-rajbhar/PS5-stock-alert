@@ -69,12 +69,19 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         const outOfStockDiv = $('#outOfStock').length > 0;
         const addToCart = $('#add-to-cart-button').length > 0;
         const buyNow = $('#buy-now-button').length > 0;
+        const inStockText = availabilityText.includes('in stock') || availabilityText.includes('available');
         
-        const isOutOfStock = outOfStockDiv || 
-                             (!addToCart && !buyNow) ||
-                             availabilityText.includes('currently unavailable') || 
-                             availabilityText.includes('out of stock') || 
-                             availabilityText.includes('cannot be delivered');
+        // If we see Add to Cart or Buy Now, it's definitely IN STOCK regardless of text
+        let isOutOfStock = false;
+        
+        if (addToCart || buyNow) {
+          isOutOfStock = false;
+        } else if (outOfStockDiv || availabilityText.includes('currently unavailable') || availabilityText.includes('out of stock') || availabilityText.includes('cannot be delivered')) {
+          isOutOfStock = true;
+        } else if (!inStockText && availabilityText.length > 0) {
+          // If there's text but it doesn't say "In Stock", assume OOS
+          isOutOfStock = true;
+        }
         
         // Prefer .a-offscreen (full accessible price like "₹49,999.00"), fall back to .a-price-whole
         const priceContainers = [
