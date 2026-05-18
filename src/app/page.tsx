@@ -16,45 +16,8 @@ export default function Home() {
       .then((res) => res.json())
       .then((data) => {
         if (Array.isArray(data)) {
-          const qcLinks: StockStatus[] = [
-            {
-              id: 'qc-blinkit',
-              platform: 'blinkit',
-              product_name: 'Check on App',
-              in_stock: true,
-              price: '---',
-              product_url: 'https://blinkit.com/s/?q=ps5',
-              is_pincode_dependent: false,
-              is_location_dependent: true,
-              note: 'Deep link only',
-              last_checked: new Date().toISOString()
-            },
-            {
-              id: 'qc-zepto',
-              platform: 'zepto',
-              product_name: 'Check on App',
-              in_stock: true,
-              price: '---',
-              product_url: 'https://www.zeptonow.com/search?query=ps5',
-              is_pincode_dependent: false,
-              is_location_dependent: true,
-              note: 'Deep link only',
-              last_checked: new Date().toISOString()
-            },
-            {
-              id: 'qc-instamart',
-              platform: 'instamart',
-              product_name: 'Check on App',
-              in_stock: true,
-              price: '---',
-              product_url: 'https://www.swiggy.com/instamart/search?query=ps5',
-              is_pincode_dependent: false,
-              is_location_dependent: true,
-              note: 'Deep link only',
-              last_checked: new Date().toISOString()
-            }
-          ];
-          setStocks([...data, ...qcLinks]);
+          // Only show non-QC platforms in the status grid
+          setStocks(data);
         }
         setLoading(false);
       })
@@ -83,52 +46,12 @@ export default function Home() {
       };
     });
 
-    // Add static QC deep links
-    const qcLinks: StockStatus[] = [
-      {
-        id: 'qc-blinkit',
-        platform: 'blinkit',
-        product_name: 'Check on App',
-        in_stock: true,
-        price: '---',
-        product_url: 'https://blinkit.com/s/?q=ps5',
-        is_pincode_dependent: false,
-        is_location_dependent: true,
-        note: 'Deep link only',
-        last_checked: new Date().toISOString()
-      },
-      {
-        id: 'qc-zepto',
-        platform: 'zepto',
-        product_name: 'Check on App',
-        in_stock: true,
-        price: '---',
-        product_url: 'https://www.zeptonow.com/search?query=ps5',
-        is_pincode_dependent: false,
-        is_location_dependent: true,
-        note: 'Deep link only',
-        last_checked: new Date().toISOString()
-      },
-      {
-        id: 'qc-instamart',
-        platform: 'instamart',
-        product_name: 'Check on App',
-        in_stock: true,
-        price: '---',
-        product_url: 'https://www.swiggy.com/instamart/search?query=ps5',
-        is_pincode_dependent: false,
-        is_location_dependent: true,
-        note: 'Deep link only',
-        last_checked: new Date().toISOString()
-      }
-    ];
-
-    setStocks([...mappedStocks, ...qcLinks]);
+    setStocks(mappedStocks);
   };
 
   return (
     <main className="min-h-screen bg-white">
-      {/* ... rest of nav ... */}
+      {/* Navbar */}
       <nav className="sticky top-0 z-50 bg-white/80 backdrop-blur-md px-4 py-3 border-b border-gray-100 flex justify-between items-center">
         <div className="flex items-center space-x-2">
           <div className="w-8 h-8 bg-[#00439c] rounded-lg flex items-center justify-center">
@@ -179,7 +102,7 @@ export default function Home() {
               </p>
               <div className="flex flex-wrap gap-2">
                 {['Slim Disc', 'Slim Digital', 'Disc Standard', 'Digital Edition', 'FC26 Bundle', 'Fortnite Bundle', 'NBA 2K26', 'COD Bundle'].map((model) => (
-                  <span key={model} className="text-[9px] font-bold bg-white text-gray-500 px-2 py-1 rounded-md border border-gray-100">
+                  <span key={model} className="text-[9px] font-bold bg-white text-gray-400 px-2 py-1 rounded-md border border-gray-100">
                     {model}
                   </span>
                 ))}
@@ -200,14 +123,10 @@ export default function Home() {
           <div className="mb-12 flex flex-col sm:flex-row sm:items-end justify-between gap-4">
              <div className="text-center sm:text-left">
                <h2 className="text-2xl md:text-3xl font-black uppercase tracking-tight">
-                 {searchPincode
-                   ? /^\d{6}$/.test(searchPincode)
-                     ? `Stock in ${searchPincode}`
-                     : 'Stock near your location'
-                   : 'Live Store Status'}
+                 Live Store Status
                </h2>
                <p className="text-xs font-bold text-gray-400 uppercase tracking-widest mt-1">
-                 {searchPincode ? 'Live results for your area' : 'Sample snapshot — enter pincode or share location for local results'}
+                 {searchPincode ? `Showing results for ${searchPincode}` : 'Real-time availability across all platforms'}
                </p>
              </div>
           </div>
