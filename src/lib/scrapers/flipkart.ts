@@ -17,15 +17,25 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edge/120.0.0.0'
 ];
 
-// Helper to fetch a list of fresh public proxies
+// Global proxy cache to avoid hitting the proxy API on every request (Vercel warm lambda optimization)
+let cachedProxies: string[] = [];
+let lastProxyFetch = 0;
+
 async function getPublicProxies(): Promise<string[]> {
+  const now = Date.now();
+  // Cache proxies for 10 minutes
+  if (cachedProxies.length > 0 && (now - lastProxyFetch) < 10 * 60 * 1000) {
+    return cachedProxies;
+  }
+
   try {
-    // Using a reliable public proxy API (Geonode free tier)
-    const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=20&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps');
+    const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=30&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps');
     const data = await res.json() as any;
-    return data.data.map((p: any) => `${p.protocols[0]}://${p.ip}:${p.port}`);
+    cachedProxies = data.data.map((p: any) => `${p.protocols[0]}://${p.ip}:${p.port}`);
+    lastProxyFetch = now;
+    return cachedProxies;
   } catch (e) {
-    return [];
+    return cachedProxies; // Fallback to old cache if fetch fails
   }
 }
 
@@ -56,7 +66,6 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
 
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
   const publicProxies = await getPublicProxies();
-  let currentProxyIdx = 0;
 
   try {
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
@@ -78,13 +87,12 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
     const fetchWithRetry = async (url: string, headers: any, useProxy: boolean = false): Promise<any> => {
       let agent = undefined;
       if (useProxy && publicProxies.length > 0) {
-        // Randomly pick a proxy from the list
         const proxyUrl = publicProxies[Math.floor(Math.random() * publicProxies.length)];
         agent = new HttpsProxyAgent(proxyUrl);
       }
 
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout for Vercel safety
+      const timeoutId = setTimeout(() => controller.abort(), useProxy ? 10000 : 7000);
 
       try {
         const response = await fetch(url, { 
@@ -95,7 +103,6 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         clearTimeout(timeoutId);
 
         if (response.status === 403 && !useProxy && publicProxies.length > 0) {
-          // If direct is blocked, try with proxy immediately
           return fetchWithRetry(url, headers, true);
         }
         return response;
@@ -123,12 +130,12 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
     let bestMatch: any = null;
     const matchCount = productUrls.length;
 
-    // STEP 2: Fetch products in PARALLEL with staggered delays (Vercel limit safety)
+    // STEP 2: Fetch products in PARALLEL with optimized delays
     const fetchPromises = productUrls.map(async (url, index) => {
       try {
-        // Random staggered delay to look natural but stay under 60s
-        const jitter = Math.floor(Math.random() * 8000);
-        await new Promise(r => setTimeout(r, 2000 + jitter));
+        // Reduced jitter: 1s base + 0-3s random
+        const jitter = Math.floor(Math.random() * 3000);
+        await new Promise(r => setTimeout(r, 1000 + jitter));
 
         const response = await fetchWithRetry(url, {
           ...baseHeaders,
@@ -191,7 +198,6 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
           });
         }
         
-        // Update bestMatch if we find a better one
         if (!bestMatch || (bestMatch.isOutOfStock && !item.isOutOfStock)) {
           bestMatch = item;
         }
