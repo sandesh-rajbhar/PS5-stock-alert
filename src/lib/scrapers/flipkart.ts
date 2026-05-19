@@ -17,28 +17,13 @@ const USER_AGENTS = [
 ];
 
 export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
+  // Use a search-based approach for some URLs to look more natural
   const allProductUrls = [
-    'https://www.flipkart.com/sony-playstation-5-console-gowr-vch-bundle-825-gb-yes/p/itm01fb765abae7a',
-    'https://www.flipkart.com/sony-ps5-standard-dualsense-bundle-cfi-1208a01r-825gb-ssd-gb/p/itm73b71109455e7',
-    'https://www.flipkart.com/sony-playstation-5-console-fc-24-825-gb-ea-sports-full-game-voucher/p/itm7b9c4acf55675',
-    'https://www.flipkart.com/sony-playstation-5-console-modern-warfare-iii-825-gb-call-duty/p/itm0abb34c158d3d',
-    'https://www.flipkart.com/sony-playstation-5-digital-825-gb-astro-s-playroom/p/itm3c6e8c91e0941',
-    'https://www.flipkart.com/sony-ps5-digital-astro-bot-bundle-slim-1000-gb-full-game/p/itm098413eda0a77',
-    'https://www.flipkart.com/sony-ps5-console-digital-slim-cfi-2008b01-1-tb-call-duty-black-ops6/p/itma157fd7ec92e6',
-    'https://www.flipkart.com/sony-ps5-console-digital-slim-cfi-2008b01-1024-gb/p/itmcabcf14108133',
-    'https://www.flipkart.com/sony-ps5-console-disc-slim-cfi-2008a01-1-tb-call-duty-black-ops6/p/itmab060bd6d0c5f',
-    'https://www.flipkart.com/sony-ps5-standard-astro-bot-bundle-slim-1000-gb-full-game/p/itmd11e32031893c',
-    'https://www.flipkart.com/sony-ps5-digital-ea-sports-fc-26-bundle-cfi-2008b01-1024-gb-full-game-voucher-astros-playroom/p/itma655a8c6aa151',
-    'https://www.flipkart.com/sony-ps5-console-disc-fortnite-bundle-slim-1-tb-yes/p/itma8f2dd1b539f1',
-    'https://www.flipkart.com/sony-ps5-console-disc-slim-cfi-2008a01-1024-gb-nba-2k26/p/itm9e65cbc8e37d4',
-    'https://www.flipkart.com/sony-ps5-digital-30th-anniv-limited-edition-slim-cfi-2008b30x-1024-gb/p/itm8cd9cce03e5df',
     'https://www.flipkart.com/sony-ps5-console-disc-slim-ps5-cfi-2008a01-1-tb/p/itmdb538afe986e8',
-    'https://www.flipkart.com/sony-ps5-console-digital-fortnite-bundle-slim-1-tb-yes/p/itm1660d204e39f8',
-    'https://www.flipkart.com/sony-cfi-2008a01-1024-gb-ea-sports-fc-26-full-game-voucher-astros-playroom/p/itm0ac20e91053e3',
+    'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c',
     'https://www.flipkart.com/sony-playstation5-digital-edition-slim-cfi-2008b01x-cfi-2116b01y-1-tb/p/itm6b0a91231fb2f',
-    'https://www.flipkart.com/sony-playstation-5-console-825-gb/p/itm62f0f8b3c0bfb',
-    'https://www.flipkart.com/sony-ps5-digital-cfi-2116b01y-825-gb/p/itm7124b7348127b',
-    'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c'
+    'https://www.flipkart.com/sony-ps5-standard-astro-bot-bundle-slim-1000-gb-full-game/p/itmd11e32031893c',
+    'https://www.flipkart.com/sony-ps5-digital-astro-bot-bundle-slim-1000-gb-full-game/p/itm098413eda0a77'
   ];
 
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
@@ -48,7 +33,7 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
     const baseHeaders = {
       'User-Agent': userAgent,
       'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-      'Accept-Language': 'en-US,en;q=0.9',
+      'Accept-Language': 'en-IN,en;q=0.9',
       'DNT': '1',
       'Upgrade-Insecure-Requests': '1',
       'Cache-Control': 'max-age=0',
@@ -56,11 +41,17 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
+      'X-Requested-With': 'com.android.chrome', // Mimic Android Chrome WebView
     };
 
-    // Step 1: Initialize session by hitting the homepage
-    const homeResponse = await fetch('https://www.flipkart.com/', { headers: baseHeaders });
-    const rawCookies = homeResponse.headers.raw()['set-cookie'] || [];
+    // Step 1: Initialize session by hitting a SEARCH page instead of homepage
+    // Search for "ps5 console" to get a natural session cookie
+    const searchUrl = `https://www.flipkart.com/search?q=ps5+console&pincode=${pincode}`;
+    const searchResponse = await fetch(searchUrl, { 
+      headers: baseHeaders
+    });
+    
+    const rawCookies = searchResponse.headers.raw()['set-cookie'] || [];
     const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
     const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
 
@@ -69,18 +60,20 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
 
     const fetchPromises = productUrls.map(async (url, index) => {
       try {
-        // Random staggered delay to avoid burst detection (1s - 4s)
-        const delay = 1000 + Math.floor(Math.random() * 3000) + (index * 200);
+        // MUCH longer randomized delay (5s - 15s) to simulate human browsing
+        const delay = 5000 + Math.floor(Math.random() * 10000) + (index * 1000);
         await new Promise(r => setTimeout(r, delay));
 
         const response = await fetch(url, {
           headers: {
             ...baseHeaders,
-            'Referer': 'https://www.flipkart.com/',
+            'Referer': searchUrl, // Make it look like we clicked from search results
             'Cookie': combinedCookies,
             'Sec-Fetch-Site': 'same-origin',
           },
         });
+
+
 
 
 
