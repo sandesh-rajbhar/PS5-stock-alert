@@ -7,6 +7,15 @@ interface ScrapeOpts {
   maxUrls?: number;
 }
 
+const USER_AGENTS = [
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:122.0) Gecko/20100101 Firefox/122.0',
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.15; rv:122.0) Gecko/20100101 Firefox/122.0',
+  'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edge/120.0.0.0'
+];
+
 export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
   const allProductUrls = [
     'https://www.flipkart.com/sony-playstation-5-console-gowr-vch-bundle-825-gb-yes/p/itm01fb765abae7a',
@@ -35,28 +44,45 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
 
   try {
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    const baseHeaders = {
+      'User-Agent': userAgent,
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'DNT': '1',
+      'Upgrade-Insecure-Requests': '1',
+      'Cache-Control': 'max-age=0',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+    };
+
+    // Step 1: Initialize session by hitting the homepage
+    const homeResponse = await fetch('https://www.flipkart.com/', { headers: baseHeaders });
+    const rawCookies = homeResponse.headers.raw()['set-cookie'] || [];
+    const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
+
     let bestMatch: any = null;
     let matchCount = productUrls.length;
 
     const fetchPromises = productUrls.map(async (url, index) => {
       try {
-        // Small staggered delay to avoid burst detection
-        await new Promise(r => setTimeout(r, index * 200));
+        // Random staggered delay to avoid burst detection (1s - 4s)
+        const delay = 1000 + Math.floor(Math.random() * 3000) + (index * 200);
+        await new Promise(r => setTimeout(r, delay));
 
         const response = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'en-US,en;q=0.9',
+            ...baseHeaders,
             'Referer': 'https://www.flipkart.com/',
-            'Cookie': `pincode=${pincode}; sn=1.1.1`,
-            'DNT': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
+            'Cookie': combinedCookies,
             'Sec-Fetch-Site': 'same-origin',
-            'Upgrade-Insecure-Requests': '1',
           },
         });
+
+
 
         if (!response.ok) {
           if (response.status === 403) {

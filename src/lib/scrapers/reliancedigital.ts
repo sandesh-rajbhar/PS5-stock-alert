@@ -33,6 +33,19 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
 
   try {
+    const headers = {
+      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'Referer': 'https://www.reliancedigital.in/',
+    };
+
+    // Step 1: Initialize session with pincode
+    const pincodeResponse = await fetch(`https://www.reliancedigital.in/rcom/pincode/check?pincode=${pincode}`, { headers });
+    const rawCookies = pincodeResponse.headers.raw()['set-cookie'] || [];
+    const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
+
     let bestMatch: any = null;
     let matchCount = productUrls.length;
 
@@ -42,13 +55,11 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
 
         const response = await fetch(url, {
           headers: {
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Cookie': `pincode=${pincode}`,
-            'Referer': 'https://www.reliancedigital.in/',
+            ...headers,
+            'Cookie': combinedCookies,
           },
         });
+
 
         if (!response.ok) return null;
         const html = await response.text();

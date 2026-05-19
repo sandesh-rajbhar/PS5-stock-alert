@@ -34,12 +34,13 @@ export default function Home() {
       const platform = r.platform.toLowerCase();
       return {
         id: `live-${i}`,
-        platform,
+        platform: r.platform, // Keep original casing
         product_name: r.productName,
         in_stock: r.inStock,
         price: r.price,
         product_url: r.productUrl,
-        is_pincode_dependent: ['amazon', 'flipkart', 'croma'].includes(platform),
+        available_items: r.items, // Include ALL items found
+        is_pincode_dependent: ['amazon', 'flipkart', 'croma', 'reliance digital', 'vijay sales'].includes(platform),
         is_location_dependent: false,
         note: r.note,
         last_checked: new Date().toISOString()
