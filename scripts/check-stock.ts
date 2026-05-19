@@ -170,11 +170,12 @@ async function main() {
         })));
       }
       console.log('Bulk check complete.');
-      return;
+      process.exit(0);
     }
 
     if (targetPincode) {
       await processPincode(targetPincode);
+      process.exit(0);
     } else {
       console.error('Missing pincode. Usage: tsx scripts/check-stock.ts [list|pincode|all] [value]');
       process.exit(1);
