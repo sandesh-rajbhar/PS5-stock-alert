@@ -9,17 +9,11 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
   auth: {
     persistSession: false,
   },
-  realtime: {
-    enabled: false,
-  },
 });
 
 // Admin client for backend tasks (bypasses RLS)
 export const supabaseAdmin = createClient(supabaseUrl, supabaseServiceKey, {
   auth: {
     persistSession: false,
-  },
-  realtime: {
-    enabled: false,
   },
 });
