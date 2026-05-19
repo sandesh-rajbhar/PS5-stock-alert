@@ -35,7 +35,7 @@ async function processPincode(pincode: string) {
       const result = results[i];
       if (result.error) return;
 
-      console.log(`- ${p.name}: ${result.inStock ? 'IN STOCK' : 'OOS'} (${result.price || 'N/A'})`);
+      console.log(`[${pincode}] - ${p.name}: ${result.inStock ? 'IN STOCK' : 'OOS'} (${result.price || 'N/A'})`);
 
       const { data: prevStatus } = await supabaseAdmin
         .from('quick_commerce_stock')
