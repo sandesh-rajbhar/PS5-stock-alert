@@ -55,39 +55,40 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
     const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
     const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
 
+    const availableItems: any[] = [];
     let bestMatch: any = null;
-    let matchCount = productUrls.length;
+    const matchCount = productUrls.length;
 
-    const fetchPromises = productUrls.map(async (url, index) => {
+    // STEP 2: Fetch products SEQUENTIALLY to avoid cluster detection
+    for (let i = 0; i < productUrls.length; i++) {
+      const url = productUrls[i];
       try {
-        // MUCH longer randomized delay (5s - 15s) to simulate human browsing
-        const delay = 5000 + Math.floor(Math.random() * 10000) + (index * 1000);
-        await new Promise(r => setTimeout(r, delay));
+        // Guaranteed sequential delay (5s - 10s between each request)
+        const jitter = Math.floor(Math.random() * 5000);
+        await new Promise(r => setTimeout(r, 5000 + jitter));
 
         const response = await fetch(url, {
           headers: {
             ...baseHeaders,
-            'Referer': searchUrl, // Make it look like we clicked from search results
+            'Referer': searchUrl,
             'Cookie': combinedCookies,
             'Sec-Fetch-Site': 'same-origin',
+            'Accept-Encoding': 'gzip, deflate, br',
           },
         });
-
-
-
-
 
         if (!response.ok) {
           if (response.status === 403) {
             console.error(`Flipkart 403 for ${url} - likely anti-bot`);
           }
-          return null;
+          continue;
         }
+
         const html = await response.text();
         const $ = cheerio.load(html);
 
         const title = $('.B_NuCI').text().trim() || $('h1').first().text().trim();
-        if (!title && html.length < 5000) return null;
+        if (!title && html.length < 5000) continue;
 
         const bodyText = html;
         const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
@@ -98,19 +99,15 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         const notifyMe = $('button:contains("NOTIFY ME")').length > 0 || $('button:contains("Notify Me")').length > 0;
 
         let isOutOfStock = false;
-
         if (isInStockSchema) {
           isOutOfStock = false;
-        } else if (isOutOfStockSchema) {
+        } else if (isOutOfStockSchema || notifyMe) {
           isOutOfStock = true;
         } else if (addToCart || buyNow) {
           isOutOfStock = false;
-        } else if (notifyMe) {
-          isOutOfStock = true;
         } else {
           isOutOfStock = true;
         }
-
 
         const rawPrice = $('._30jeq3._16Jk6d').first().text().trim() ||
                          $('._30jeq3').first().text().trim() ||
@@ -118,23 +115,13 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         const priceMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/);
         const price = priceMatch ? priceMatch[0].replace(/\s+/g, '') : '';
 
-        return {
+        const item = {
           title,
           url,
           price: price || null,
           isOutOfStock: isOutOfStock
         };
-      } catch (e) {
-        return null;
-      }
-    });
 
-    const results = await Promise.allSettled(fetchPromises);
-    const availableItems: any[] = [];
-
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value) {
-        const item = result.value;
         if (!item.isOutOfStock && item.price) {
           availableItems.push({
             name: item.title,
@@ -148,6 +135,8 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         } else if (!bestMatch) {
           bestMatch = item;
         }
+      } catch (e) {
+        console.error(`Error fetching ${url}:`, e);
       }
     }
 
