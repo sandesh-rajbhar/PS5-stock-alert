@@ -115,7 +115,7 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
     let combinedCookies = `pincode=${pincode}`;
     if (searchResponse && searchResponse.ok) {
       const rawCookies = searchResponse.headers.raw()['set-cookie'] || [];
-      const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+      const sessionCookies = rawCookies.map((c: string) => c.split(';')[0]).join('; ');
       combinedCookies = `${sessionCookies}; pincode=${pincode}`;
     }
 
