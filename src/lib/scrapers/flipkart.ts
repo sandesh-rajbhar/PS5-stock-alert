@@ -1,5 +1,6 @@
 import * as cheerio from 'cheerio';
 import fetch from 'node-fetch';
+import { HttpsProxyAgent } from 'https-proxy-agent';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
 
@@ -16,17 +17,46 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edge/120.0.0.0'
 ];
 
+// Helper to fetch a list of fresh public proxies
+async function getPublicProxies(): Promise<string[]> {
+  try {
+    // Using a reliable public proxy API (Geonode free tier)
+    const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=20&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps');
+    const data = await res.json();
+    return data.data.map((p: any) => `${p.protocols[0]}://${p.ip}:${p.port}`);
+  } catch (e) {
+    return [];
+  }
+}
+
 export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
-  // Use a search-based approach for some URLs to look more natural
   const allProductUrls = [
-    'https://www.flipkart.com/sony-ps5-console-disc-slim-ps5-cfi-2008a01-1-tb/p/itmdb538afe986e8',
-    'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c',
-    'https://www.flipkart.com/sony-playstation5-digital-edition-slim-cfi-2008b01x-cfi-2116b01y-1-tb/p/itm6b0a91231fb2f',
+    'https://www.flipkart.com/sony-playstation-5-console-gowr-vch-bundle-825-gb-yes/p/itm01fb765abae7a',
+    'https://www.flipkart.com/sony-ps5-standard-dualsense-bundle-cfi-1208a01r-825gb-ssd-gb/p/itm73b71109455e7',
+    'https://www.flipkart.com/sony-playstation-5-console-fc-24-825-gb-ea-sports-full-game-voucher/p/itm7b9c4acf55675',
+    'https://www.flipkart.com/sony-playstation-5-console-modern-warfare-iii-825-gb-call-duty/p/itm0abb34c158d3d',
+    'https://www.flipkart.com/sony-playstation-5-digital-825-gb-astro-s-playroom/p/itm3c6e8c91e0941',
+    'https://www.flipkart.com/sony-ps5-digital-astro-bot-bundle-slim-1000-gb-full-game/p/itm098413eda0a77',
+    'https://www.flipkart.com/sony-ps5-console-digital-slim-cfi-2008b01-1-tb-call-duty-black-ops6/p/itma157fd7ec92e6',
+    'https://www.flipkart.com/sony-ps5-console-digital-slim-cfi-2008b01-1024-gb/p/itmcabcf14108133',
+    'https://www.flipkart.com/sony-ps5-console-disc-slim-cfi-2008a01-1-tb-call-duty-black-ops6/p/itmab060bd6d0c5f',
     'https://www.flipkart.com/sony-ps5-standard-astro-bot-bundle-slim-1000-gb-full-game/p/itmd11e32031893c',
-    'https://www.flipkart.com/sony-ps5-digital-astro-bot-bundle-slim-1000-gb-full-game/p/itm098413eda0a77'
+    'https://www.flipkart.com/sony-ps5-digital-ea-sports-fc-26-bundle-cfi-2008b01-1024-gb-full-game-voucher-astros-playroom/p/itma655a8c6aa151',
+    'https://www.flipkart.com/sony-ps5-console-disc-fortnite-bundle-slim-1-tb-yes/p/itma8f2dd1b539f1',
+    'https://www.flipkart.com/sony-ps5-console-disc-slim-cfi-2008a01-1024-gb-nba-2k26/p/itm9e65cbc8e37d4',
+    'https://www.flipkart.com/sony-ps5-digital-30th-anniv-limited-edition-slim-cfi-2008b30x-1024-gb/p/itm8cd9cce03e5df',
+    'https://www.flipkart.com/sony-ps5-console-disc-slim-ps5-cfi-2008a01-1-tb/p/itmdb538afe986e8',
+    'https://www.flipkart.com/sony-ps5-console-digital-fortnite-bundle-slim-1-tb-yes/p/itm1660d204e39f8',
+    'https://www.flipkart.com/sony-cfi-2008a01-1024-gb-ea-sports-fc-26-full-game-voucher-astros-playroom/p/itm0ac20e91053e3',
+    'https://www.flipkart.com/sony-playstation5-digital-edition-slim-cfi-2008b01x-cfi-2116b01y-1-tb/p/itm6b0a91231fb2f',
+    'https://www.flipkart.com/sony-playstation-5-console-825-gb/p/itm62f0f8b3c0bfb',
+    'https://www.flipkart.com/sony-ps5-digital-cfi-2116b01y-825-gb/p/itm7124b7348127b',
+    'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c'
   ];
 
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
+  const publicProxies = await getPublicProxies();
+  let currentProxyIdx = 0;
 
   try {
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
@@ -41,58 +71,88 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
       'Sec-Fetch-Mode': 'navigate',
       'Sec-Fetch-Site': 'none',
       'Sec-Fetch-User': '?1',
-      'X-Requested-With': 'com.android.chrome', // Mimic Android Chrome WebView
+      'X-Requested-With': 'com.android.chrome',
     };
 
-    // Step 1: Initialize session by hitting a SEARCH page instead of homepage
-    // Search for "ps5 console" to get a natural session cookie
+    // Helper to perform fetch with optional proxy rotation and proper v3 timeout
+    const fetchWithRetry = async (url: string, headers: any, useProxy: boolean = false): Promise<any> => {
+      let agent = undefined;
+      if (useProxy && publicProxies.length > 0) {
+        // Randomly pick a proxy from the list
+        const proxyUrl = publicProxies[Math.floor(Math.random() * publicProxies.length)];
+        agent = new HttpsProxyAgent(proxyUrl);
+      }
+
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12s timeout for Vercel safety
+
+      try {
+        const response = await fetch(url, { 
+          headers, 
+          agent, 
+          signal: controller.signal as any 
+        });
+        clearTimeout(timeoutId);
+
+        if (response.status === 403 && !useProxy && publicProxies.length > 0) {
+          // If direct is blocked, try with proxy immediately
+          return fetchWithRetry(url, headers, true);
+        }
+        return response;
+      } catch (e) {
+        clearTimeout(timeoutId);
+        if (!useProxy && publicProxies.length > 0) {
+          return fetchWithRetry(url, headers, true);
+        }
+        return null;
+      }
+    };
+
+    // Step 1: Initialize session
     const searchUrl = `https://www.flipkart.com/search?q=ps5+console&pincode=${pincode}`;
-    const searchResponse = await fetch(searchUrl, { 
-      headers: baseHeaders
-    });
+    const searchResponse = await fetchWithRetry(searchUrl, baseHeaders);
     
-    const rawCookies = searchResponse.headers.raw()['set-cookie'] || [];
-    const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
-    const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
+    let combinedCookies = `pincode=${pincode}`;
+    if (searchResponse && searchResponse.ok) {
+      const rawCookies = searchResponse.headers.raw()['set-cookie'] || [];
+      const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+      combinedCookies = `${sessionCookies}; pincode=${pincode}`;
+    }
 
     const availableItems: any[] = [];
     let bestMatch: any = null;
     const matchCount = productUrls.length;
 
-    // STEP 2: Fetch products SEQUENTIALLY to avoid cluster detection
-    for (let i = 0; i < productUrls.length; i++) {
-      const url = productUrls[i];
+    // STEP 2: Fetch products in PARALLEL with staggered delays (Vercel limit safety)
+    const fetchPromises = productUrls.map(async (url, index) => {
       try {
-        // Guaranteed sequential delay (5s - 10s between each request)
-        const jitter = Math.floor(Math.random() * 5000);
-        await new Promise(r => setTimeout(r, 5000 + jitter));
+        // Random staggered delay to look natural but stay under 60s
+        const jitter = Math.floor(Math.random() * 8000);
+        await new Promise(r => setTimeout(r, 2000 + jitter));
 
-        const response = await fetch(url, {
-          headers: {
-            ...baseHeaders,
-            'Referer': searchUrl,
-            'Cookie': combinedCookies,
-            'Sec-Fetch-Site': 'same-origin',
-            'Accept-Encoding': 'gzip, deflate, br',
-          },
+        const response = await fetchWithRetry(url, {
+          ...baseHeaders,
+          'Referer': searchUrl,
+          'Cookie': combinedCookies,
+          'Sec-Fetch-Site': 'same-origin',
+          'Accept-Encoding': 'gzip, deflate, br',
         });
 
-        if (!response.ok) {
-          if (response.status === 403) {
-            console.error(`Flipkart 403 for ${url} - likely anti-bot`);
+        if (!response || !response.ok) {
+          if (response?.status === 403) {
+            console.error(`Flipkart 403 for ${url}`);
           }
-          continue;
+          return;
         }
 
         const html = await response.text();
         const $ = cheerio.load(html);
 
         const title = $('.B_NuCI').text().trim() || $('h1').first().text().trim();
-        if (!title && html.length < 5000) continue;
+        if (!title && html.length < 5000) return;
 
-        const bodyText = html;
-        const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
-        const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
+        const isInStockSchema = html.includes('http://schema.org/InStock') || html.includes('InStock');
+        const isOutOfStockSchema = html.includes('http://schema.org/OutOfStock') || html.includes('OutOfStock');
 
         const addToCart = $('button._2KpZ6l._2U9u96').length > 0 || $('.row._10S6vX').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('button:contains("Add to Cart")').length > 0;
         const buyNow = $('button._2KpZ6l._20p_ns').length > 0 || $('button:contains("BUY NOW")').length > 0 || $('button:contains("Buy Now")').length > 0;
@@ -129,16 +189,18 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
             price: item.price,
             inStock: true
           });
-          if (!bestMatch || bestMatch.isOutOfStock) {
-            bestMatch = item;
-          }
-        } else if (!bestMatch) {
+        }
+        
+        // Update bestMatch if we find a better one
+        if (!bestMatch || (bestMatch.isOutOfStock && !item.isOutOfStock)) {
           bestMatch = item;
         }
       } catch (e) {
-        console.error(`Error fetching ${url}:`, e);
+        // Silent fail
       }
-    }
+    });
+
+    await Promise.allSettled(fetchPromises);
 
     if (!bestMatch) {
        return {
