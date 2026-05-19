@@ -15,18 +15,26 @@ jobs:
     outputs:
       pincodes: ${{ steps.get-pincodes.outputs.pincodes }}
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
       - name: Fetch Pincodes
         id: get-pincodes
         env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          ENDPOINT: ${{ secrets.CHECK_STOCK_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
         run: |
-          if [ -z "$ENDPOINT" ] || [ -z "$CRON_SECRET" ]; then
-            echo "Missing CHECK_STOCK_URL or CRON_SECRET secret"
-            exit 1
-          fi
-          # Fetch JSON array of pincodes: ["110001", "400001", ...]
-          PINCODES=$(curl -fsS -H "Authorization: Bearer $CRON_SECRET" "$ENDPOINT?list=true")
+          PINCODES=$(npx tsx scripts/check-stock.ts list)
           echo "pincodes=$PINCODES" >> $GITHUB_OUTPUT
 
   check:
@@ -38,13 +46,26 @@ jobs:
       max-parallel: 5
       fail-fast: false
     steps:
-      - name: Hit /api/check-stock
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Check Stock
         env:
-          CRON_SECRET: ${{ secrets.CRON_SECRET }}
-          ENDPOINT: ${{ secrets.CHECK_STOCK_URL }}
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          NEXT_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.NEXT_PUBLIC_SUPABASE_ANON_KEY }}
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          FROM_EMAIL: ${{ secrets.FROM_EMAIL }}
+          NEXT_PUBLIC_APP_URL: ${{ secrets.NEXT_PUBLIC_APP_URL }}
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
         run: |
-          curl -fsS --max-time 60 \
-            -H "Authorization: Bearer $CRON_SECRET" \
-            "$ENDPOINT?pincode=${{ matrix.pincode }}" \
-            -o response.json -w "Pincode ${{ matrix.pincode }}: HTTP %{http_code} in %{time_total}s\n"
-          cat response.json
+          npx tsx scripts/check-stock.ts pincode ${{ matrix.pincode }}

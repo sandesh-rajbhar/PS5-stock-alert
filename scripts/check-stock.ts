@@ -1,14 +1,11 @@
-import { NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-import { scrapeAmazon } from '@/lib/scrapers/amazon';
-import { scrapeFlipkart } from '@/lib/scrapers/flipkart';
-import { scrapeCroma } from '@/lib/scrapers/croma';
-import { scrapeVijaySales } from '@/lib/scrapers/vijaysales';
-import { scrapeRelianceDigital } from '@/lib/scrapers/reliancedigital';
-import { sendStockAlert } from '@/lib/notifier';
-import { ScrapeResult } from '@/lib/types';
-
-export const maxDuration = 60;
+import { supabaseAdmin } from '../src/lib/supabase';
+import { scrapeAmazon } from '../src/lib/scrapers/amazon';
+import { scrapeFlipkart } from '../src/lib/scrapers/flipkart';
+import { scrapeCroma } from '../src/lib/scrapers/croma';
+import { scrapeVijaySales } from '../src/lib/scrapers/vijaysales';
+import { scrapeRelianceDigital } from '../src/lib/scrapers/reliancedigital';
+import { sendStockAlert } from '../src/lib/notifier';
+import { ScrapeResult } from '../src/lib/types';
 
 const PLATFORMS: { name: string; fn: (pincode: string) => Promise<ScrapeResult> }[] = [
   { name: 'amazon', fn: scrapeAmazon },
@@ -20,7 +17,10 @@ const PLATFORMS: { name: string; fn: (pincode: string) => Promise<ScrapeResult> 
 
 const NATIONAL_BASELINE_PINCODE = '110001';
 
-async function processPincode(pincode: string, isBaseline: boolean) {
+async function processPincode(pincode: string) {
+  const isBaseline = pincode === NATIONAL_BASELINE_PINCODE;
+  console.log(`Checking pincode: ${pincode} ${isBaseline ? '(Baseline)' : ''}`);
+
   const results = await Promise.all(
     PLATFORMS.map(p =>
       p.fn(pincode).catch((e): ScrapeResult => {
@@ -34,6 +34,8 @@ async function processPincode(pincode: string, isBaseline: boolean) {
     PLATFORMS.map(async (p, i) => {
       const result = results[i];
       if (result.error) return;
+
+      console.log(`- ${p.name}: ${result.inStock ? 'IN STOCK' : 'OOS'} (${result.price || 'N/A'})`);
 
       const { data: prevStatus } = await supabaseAdmin
         .from('quick_commerce_stock')
@@ -77,6 +79,8 @@ async function processPincode(pincode: string, isBaseline: boolean) {
 
       if (!becameInStock) return;
 
+      console.log(`!!! Alert: ${p.name} became in stock for ${pincode} !!!`);
+
       const { data: event } = await supabaseAdmin
         .from('stock_events')
         .insert({
@@ -117,9 +121,34 @@ async function processPincode(pincode: string, isBaseline: boolean) {
   );
 }
 
-export async function GET(request: Request) {
-  return NextResponse.json({ 
-    message: 'This endpoint is disabled. Stock checking has migrated to GitHub Actions to save Vercel execution time.',
-    success: true 
-  });
+async function main() {
+  const mode = process.argv[2]; // 'list' or 'pincode'
+  const targetPincode = process.argv[3];
+
+  try {
+    const { data: pincodesData } = await supabaseAdmin
+      .from('subscribers')
+      .select('pincode')
+      .eq('is_active', true);
+
+    const subscriberPincodes = Array.from(new Set(pincodesData?.map(p => p.pincode) || []));
+    const pincodesToCheck = Array.from(new Set([NATIONAL_BASELINE_PINCODE, ...subscriberPincodes]));
+
+    if (mode === 'list') {
+      console.log(JSON.stringify(pincodesToCheck));
+      return;
+    }
+
+    if (targetPincode) {
+      await processPincode(targetPincode);
+    } else {
+      console.error('Missing pincode. Usage: tsx scripts/check-stock.ts [list|pincode] [value]');
+      process.exit(1);
+    }
+  } catch (error) {
+    console.error('Check stock error:', error);
+    process.exit(1);
+  }
 }
+
+main();
