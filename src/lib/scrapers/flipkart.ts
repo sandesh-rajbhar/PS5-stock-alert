@@ -158,29 +158,63 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         const title = $('.B_NuCI').text().trim() || $('h1').first().text().trim();
         if (!title && html.length < 5000) return;
 
-        const isInStockSchema = html.includes('http://schema.org/InStock') || html.includes('InStock');
-        const isOutOfStockSchema = html.includes('http://schema.org/OutOfStock') || html.includes('OutOfStock');
+        // --- STRICT STOCK DETECTION ---
+        // Note: We IGNORE schema.org/InStock because it often reflects National stock, not Local stock.
+        const htmlLower = html.toLowerCase();
+        
+        const hasNotDeliverable = htmlLower.includes('not deliverable') || 
+                                 htmlLower.includes('not available for') ||
+                                 htmlLower.includes('check availability') ||
+                                 htmlLower.includes('enter pincode');
 
-        const addToCart = $('button._2KpZ6l._2U9u96').length > 0 || $('.row._10S6vX').length > 0 || $('button:contains("ADD TO CART")').length > 0 || $('button:contains("Add to Cart")').length > 0;
-        const buyNow = $('button._2KpZ6l._20p_ns').length > 0 || $('button:contains("BUY NOW")').length > 0 || $('button:contains("Buy Now")').length > 0;
-        const notifyMe = $('button:contains("NOTIFY ME")').length > 0 || $('button:contains("Notify Me")').length > 0;
+        const buyNow = $('button._2KpZ6l._20p_ns').length > 0 || 
+                      $('button:contains("BUY NOW")').length > 0 || 
+                      $('button:contains("Buy Now")').length > 0;
+        
+        const addToCart = $('button._2KpZ6l._2U9u96').length > 0 || 
+                         $('.row._10S6vX').length > 0 || 
+                         $('button:contains("ADD TO CART")').length > 0 || 
+                         $('button:contains("Add to Cart")').length > 0;
 
-        let isOutOfStock = false;
-        if (isInStockSchema) {
+        const notifyMe = $('button:contains("NOTIFY ME")').length > 0 || 
+                        $('button:contains("Notify Me")').length > 0;
+
+        let isOutOfStock = true;
+
+        // To be "In Stock" for a specific pincode:
+        // 1. MUST have a "Buy Now" button (not just Add to Cart)
+        // 2. MUST NOT have "Not Deliverable" text
+        // 3. MUST NOT have "Notify Me" button
+        if (buyNow && !hasNotDeliverable && !notifyMe) {
           isOutOfStock = false;
-        } else if (isOutOfStockSchema || notifyMe) {
-          isOutOfStock = true;
-        } else if (addToCart || buyNow) {
-          isOutOfStock = false;
+        } else if (addToCart && !buyNow && !hasNotDeliverable) {
+          // Sometimes only Add to Cart is there, but if "Change Address" is missing, it's usually okay.
+          // In your case, "Change Address" was there, so buyNow was missing.
+          isOutOfStock = true; 
         } else {
           isOutOfStock = true;
         }
 
-        const rawPrice = $('._30jeq3._16Jk6d').first().text().trim() ||
-                         $('._30jeq3').first().text().trim() ||
-                         $('div[class*="Nx9bqj"]').first().text().trim();
-        const priceMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/);
-        const price = priceMatch ? priceMatch[0].replace(/\s+/g, '') : '';
+        // --- PRICE PARSING ---
+        let price = '';
+        try {
+          const jsonLdText = $('script#jsonLD').text();
+          if (jsonLdText) {
+            const jsonLd = JSON.parse(jsonLdText);
+            const offer = Array.isArray(jsonLd) ? jsonLd[0]?.offers : jsonLd?.offers;
+            if (offer && offer.price) {
+              price = `₹${Number(offer.price).toLocaleString('en-IN')}`;
+            }
+          }
+        } catch (e) {}
+
+        if (!price) {
+          const rawPrice = $('._30jeq3._16Jk6d').first().text().trim() ||
+                           $('._30jeq3').first().text().trim() ||
+                           $('div[class*="Nx9bqj"]').first().text().trim();
+          const priceMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/);
+          price = priceMatch ? priceMatch[0].replace(/\s+/g, '') : '';
+        }
 
         const item = {
           title,
