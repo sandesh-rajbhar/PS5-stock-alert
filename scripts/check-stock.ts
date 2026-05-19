@@ -122,7 +122,7 @@ async function processPincode(pincode: string) {
 }
 
 async function main() {
-  const mode = process.argv[2]; // 'list' or 'pincode'
+  const mode = process.argv[2]; // 'list', 'pincode', or 'all'
   const targetPincode = process.argv[3];
 
   try {
@@ -139,10 +139,23 @@ async function main() {
       return;
     }
 
+    if (mode === 'all') {
+      console.log(`Starting bulk check for ${pincodesToCheck.length} pincodes...`);
+      // Process in small batches to avoid hitting rate limits or memory issues
+      const BATCH_SIZE = 3;
+      for (let i = 0; i < pincodesToCheck.length; i += BATCH_SIZE) {
+        const batch = pincodesToCheck.slice(i, i + BATCH_SIZE);
+        console.log(`Processing batch: ${batch.join(', ')}`);
+        await Promise.all(batch.map(p => processPincode(p)));
+      }
+      console.log('Bulk check complete.');
+      return;
+    }
+
     if (targetPincode) {
       await processPincode(targetPincode);
     } else {
-      console.error('Missing pincode. Usage: tsx scripts/check-stock.ts [list|pincode] [value]');
+      console.error('Missing pincode. Usage: tsx scripts/check-stock.ts [list|pincode|all] [value]');
       process.exit(1);
     }
   } catch (error) {
