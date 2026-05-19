@@ -22,7 +22,7 @@ async function getPublicProxies(): Promise<string[]> {
   try {
     // Using a reliable public proxy API (Geonode free tier)
     const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=20&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps');
-    const data = await res.json();
+    const data = await res.json() as any;
     return data.data.map((p: any) => `${p.protocols[0]}://${p.ip}:${p.port}`);
   } catch (e) {
     return [];
