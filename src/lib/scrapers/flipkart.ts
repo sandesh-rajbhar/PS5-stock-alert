@@ -44,33 +44,44 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
 
   try {
+    const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
+    const baseHeaders = {
+      'User-Agent': userAgent,
+      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
+      'Accept-Language': 'en-US,en;q=0.9',
+      'DNT': '1',
+      'Upgrade-Insecure-Requests': '1',
+      'Cache-Control': 'max-age=0',
+      'Sec-Fetch-Dest': 'document',
+      'Sec-Fetch-Mode': 'navigate',
+      'Sec-Fetch-Site': 'none',
+      'Sec-Fetch-User': '?1',
+    };
+
+    // Step 1: Initialize session by hitting the homepage
+    const homeResponse = await fetch('https://www.flipkart.com/', { headers: baseHeaders });
+    const rawCookies = homeResponse.headers.raw()['set-cookie'] || [];
+    const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
+
     let bestMatch: any = null;
     let matchCount = productUrls.length;
 
     const fetchPromises = productUrls.map(async (url, index) => {
       try {
-        // Random staggered delay to avoid burst detection (500ms - 2500ms)
-        const delay = 500 + Math.floor(Math.random() * 2000) + (index * 100);
+        // Random staggered delay to avoid burst detection (1s - 4s)
+        const delay = 1000 + Math.floor(Math.random() * 3000) + (index * 200);
         await new Promise(r => setTimeout(r, delay));
-
-        const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
 
         const response = await fetch(url, {
           headers: {
-            'User-Agent': userAgent,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7',
-            'Accept-Language': 'en-US,en;q=0.9',
-            'Referer': 'https://www.google.com/',
-            'Cookie': `pincode=${pincode}`,
-            'DNT': '1',
-            'Sec-Fetch-Dest': 'document',
-            'Sec-Fetch-Mode': 'navigate',
-            'Sec-Fetch-Site': 'cross-site',
-            'Sec-Fetch-User': '?1',
-            'Upgrade-Insecure-Requests': '1',
-            'Cache-Control': 'max-age=0',
+            ...baseHeaders,
+            'Referer': 'https://www.flipkart.com/',
+            'Cookie': combinedCookies,
+            'Sec-Fetch-Site': 'same-origin',
           },
         });
+
 
 
         if (!response.ok) {
