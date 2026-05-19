@@ -141,12 +141,14 @@ async function main() {
 
     if (mode === 'all') {
       console.log(`Starting bulk check for ${pincodesToCheck.length} pincodes...`);
-      // Process in small batches to avoid hitting rate limits or memory issues
-      const BATCH_SIZE = 3;
+      // Process in larger batches to match GitHub runner's capability
+      const BATCH_SIZE = 10;
       for (let i = 0; i < pincodesToCheck.length; i += BATCH_SIZE) {
         const batch = pincodesToCheck.slice(i, i + BATCH_SIZE);
-        console.log(`Processing batch: ${batch.join(', ')}`);
-        await Promise.all(batch.map(p => processPincode(p)));
+        console.log(`[${new Date().toLocaleTimeString()}] Processing batch: ${batch.join(', ')}`);
+        await Promise.all(batch.map(p => processPincode(p).catch(err => {
+          console.error(`Error processing pincode ${p}:`, err);
+        })));
       }
       console.log('Bulk check complete.');
       return;
