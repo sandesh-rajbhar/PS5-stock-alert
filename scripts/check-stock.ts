@@ -81,7 +81,7 @@ async function processPincode(pincode: string) {
 
       console.log(`!!! Alert: ${p.name} became in stock for ${pincode} !!!`);
 
-      const { data: event } = await supabaseAdmin
+      const { data: event, error: eventError } = await supabaseAdmin
         .from('stock_events')
         .insert({
           platform: `${p.name} (${pincode})`,
@@ -92,29 +92,48 @@ async function processPincode(pincode: string) {
         .select()
         .single();
 
-      const { data: subscribers } = await supabaseAdmin
+      if (eventError) {
+        console.error(`Failed to create stock event for ${pincode}:`, eventError);
+      }
+
+      const { data: subscribers, error: subError } = await supabaseAdmin
         .from('subscribers')
         .select('id, email, unsubscribe_token, telegram_chat_id')
         .eq('is_active', true)
         .eq('pincode', pincode);
 
-      if (!subscribers || !event) return;
+      if (subError) {
+        console.error(`Failed to fetch subscribers for ${pincode}:`, subError);
+      }
+
+      if (!subscribers || subscribers.length === 0) {
+        console.log(`No active subscribers found for pincode ${pincode}.`);
+        return;
+      }
+
+      console.log(`Sending alerts to ${subscribers.length} subscribers for ${p.name} in ${pincode}...`);
 
       await Promise.all(
         subscribers.map(async sub => {
-          await sendStockAlert({
-            email: sub.email,
-            platform: p.name,
-            productUrl: result.productUrl,
-            price: result.price,
-            deliveryTime: result.deliveryTime,
-            unsubscribeToken: sub.unsubscribe_token,
-            telegramChatId: sub.telegram_chat_id,
-          });
-          await supabaseAdmin.from('notification_log').insert({
-            subscriber_id: sub.id,
-            stock_event_id: event.id,
-          });
+          try {
+            await sendStockAlert({
+              email: sub.email,
+              platform: p.name,
+              productUrl: result.productUrl,
+              price: result.price,
+              deliveryTime: result.deliveryTime,
+              unsubscribeToken: sub.unsubscribe_token,
+              telegramChatId: sub.telegram_chat_id,
+            });
+            console.log(`  - Successfully sent alert to ${sub.email || 'Telegram ID: ' + sub.telegram_chat_id}`);
+            
+            await supabaseAdmin.from('notification_log').insert({
+              subscriber_id: sub.id,
+              stock_event_id: event?.id,
+            });
+          } catch (err) {
+            console.error(`  - Failed to send alert to ${sub.email || sub.telegram_chat_id}:`, err);
+          }
         })
       );
     })
