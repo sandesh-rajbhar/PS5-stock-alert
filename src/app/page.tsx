@@ -165,10 +165,10 @@ function StoresMarquee() {
 
 /* ─── Stats ──────────────────────────────────────────────────── */
 const STATS = [
-  { value: '06',   label: 'Retailers\ntracked'       },
-  { value: '<1s',  label: 'Alert delay\nguaranteed'  },
-  { value: '₹0',   label: 'Cost,\nforever'           },
-  { value: '5+',   label: 'PS5 models\nmonitored'    },
+  { value: '06',  label: 'Retailers tracked'   },
+  { value: '<1s', label: 'Alert delay'         },
+  { value: '₹0',  label: 'Cost forever'        },
+  { value: '5+',  label: 'PS5 models'          },
 ];
 
 /* ─── Features ───────────────────────────────────────────────── */
@@ -308,18 +308,21 @@ export default function LandingPage() {
       <StoresMarquee />
 
       {/* ══ STATS ══════════════════════════════════════════════ */}
-      <section className="bg-stats py-20 px-6">
+      <section className="bg-stats py-14 md:py-20 px-4 sm:px-6">
         <div className="max-w-5xl mx-auto">
-          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] text-center mb-14">
+          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] text-center mb-8 md:mb-14">
             By the numbers
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-y md:divide-y-0 divide-theme-divider border border-theme-divider rounded-2xl overflow-hidden">
+          <div className="grid grid-cols-2 md:grid-cols-4 divide-theme-divider border border-theme-divider rounded-2xl overflow-hidden
+                          [&>*]:border-b [&>*]:border-theme-divider
+                          [&>*:nth-child(odd)]:border-r [&>*:nth-child(odd)]:border-theme-divider
+                          md:[&>*:nth-child(n)]:border-r md:[&>*:last-child]:border-r-0 md:[&>*]:border-b-0">
             {STATS.map(({ value, label }) => (
-              <div key={value} className="flex flex-col items-center justify-center text-center py-10 px-4 bg-theme-card">
-                <span className="text-5xl md:text-6xl font-black text-ps-neon-blue leading-none mb-3">
+              <div key={value} className="flex flex-col items-center justify-center text-center py-8 md:py-10 px-3 sm:px-4 bg-theme-card">
+                <span className="text-4xl sm:text-5xl md:text-6xl font-black text-ps-neon-blue leading-none mb-2 md:mb-3">
                   {value}
                 </span>
-                <span className="text-[10px] font-black text-theme-faint uppercase tracking-widest whitespace-pre-line leading-relaxed">
+                <span className="text-[9px] sm:text-[10px] font-black text-theme-faint uppercase tracking-widest leading-relaxed text-center">
                   {label}
                 </span>
               </div>
