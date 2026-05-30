@@ -313,16 +313,13 @@ export default function LandingPage() {
           <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] text-center mb-8 md:mb-14">
             By the numbers
           </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 divide-theme-divider border border-theme-divider rounded-2xl overflow-hidden
-                          [&>*]:border-b [&>*]:border-theme-divider
-                          [&>*:nth-child(odd)]:border-r [&>*:nth-child(odd)]:border-theme-divider
-                          md:[&>*:nth-child(n)]:border-r md:[&>*:last-child]:border-r-0 md:[&>*]:border-b-0">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
             {STATS.map(({ value, label }) => (
-              <div key={value} className="flex flex-col items-center justify-center text-center py-8 md:py-10 px-3 sm:px-4 bg-theme-card">
-                <span className="text-4xl sm:text-5xl md:text-6xl font-black text-ps-neon-blue leading-none mb-2 md:mb-3">
+              <div key={value} className="ps-card flex flex-col items-center justify-center text-center py-8 px-4">
+                <span className="text-4xl sm:text-5xl md:text-6xl font-black text-ps-neon-blue leading-none mb-2">
                   {value}
                 </span>
-                <span className="text-[9px] sm:text-[10px] font-black text-theme-faint uppercase tracking-widest leading-relaxed text-center">
+                <span className="text-[9px] sm:text-[10px] font-black text-theme-faint uppercase tracking-widest">
                   {label}
                 </span>
               </div>
