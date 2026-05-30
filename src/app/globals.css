@@ -2,15 +2,16 @@
 
 @theme {
   --color-ps-blue: #00439c;
-  --color-ps-black: #000000;
+  --color-ps-neon-blue: #0070ff;
+  --color-ps-black: #09090b;
   --color-ps-white: #ffffff;
-  --color-ps-gray: #f2f2f2;
+  --color-ps-gray: #18181b;
 }
 
 @layer base {
   body {
-    background-color: white;
-    color: black;
+    background-color: var(--color-ps-black);
+    color: var(--color-ps-white);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
@@ -21,8 +22,8 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1.25rem 2rem; /* Increased for mobile touch */
-    border-radius: 1rem; /* More modern rounded square for mobile */
+    padding: 1.25rem 2rem;
+    border-radius: 1rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
@@ -35,16 +36,28 @@
   }
   
   .ps-button-primary {
-    background-color: var(--color-ps-blue);
+    background: var(--color-ps-neon-blue);
     color: white;
-    box-shadow: 0 10px 15px -3px rgba(0, 67, 156, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .ps-button-primary:hover {
+    background: #0060df;
   }
 
   .ps-card {
-    background-color: white;
-    border: 1px solid #f1f5f9;
+    background-color: rgba(255, 255, 255, 0.03);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
     border-radius: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .ps-card:hover {
+    border-color: rgba(255, 255, 255, 0.15);
+    transform: translateY(-4px);
   }
 
   .status-pill {
