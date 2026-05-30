@@ -29,9 +29,9 @@ async function getPublicProxies(): Promise<string[]> {
   }
 
   try {
-    const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=30&page=1&sort_by=lastChecked&sort_type=desc&protocols=http%2Chttps');
+    const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=30&page=1&sort_by=lastChecked&sort_type=desc&protocols=https');
     const data = await res.json() as any;
-    cachedProxies = data.data.map((p: any) => `${p.protocols[0]}://${p.ip}:${p.port}`);
+    cachedProxies = data.data.map((p: any) => `https://${p.ip}:${p.port}`);
     lastProxyFetch = now;
     return cachedProxies;
   } catch (e) {
@@ -95,11 +95,14 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
       const timeoutId = setTimeout(() => controller.abort(), useProxy ? 10000 : 7000);
 
       try {
-        const response = await fetch(url, { 
-          headers, 
-          agent, 
-          signal: controller.signal as any 
-        });
+        const response = await Promise.race([
+          fetch(url, { headers, agent, signal: controller.signal as any }),
+          new Promise<never>((_, reject) => {
+            if (agent) {
+              (agent as any).once?.('error', reject);
+            }
+          }),
+        ]);
         clearTimeout(timeoutId);
 
         if (response.status === 403 && !useProxy && publicProxies.length > 0) {
