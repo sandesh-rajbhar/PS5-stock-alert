@@ -1,9 +1,6 @@
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import {
-  MapPin, Bell, Newspaper, ArrowRight,
-  Check, X, Search, Zap, ShieldCheck,
-} from 'lucide-react';
+import { MapPin, Bell, ArrowRight, Check, X } from 'lucide-react';
 
 /* ─── Mock product-demo components (static, no JS) ──────────── */
 
@@ -146,6 +143,51 @@ function MockNews() {
   );
 }
 
+function MockGamePrice() {
+  const rows = [
+    { store: 'Amazon India',     price: '₹3,799', was: '₹4,999', best: true  },
+    { store: 'PlayStation Store',price: '₹4,499', was: null,     best: false },
+    { store: 'Flipkart',         price: '₹3,999', was: null,     best: false },
+  ];
+  return (
+    <div className="relative w-full max-w-xs mx-auto">
+      <span aria-hidden className="absolute -top-6 -right-6 text-[100px] font-black leading-none select-none pointer-events-none dark:text-amber-500/[0.05] text-amber-500/[0.06]">△</span>
+      <div className="ps-card p-5 relative z-10">
+        {/* Game header */}
+        <div className="flex items-center gap-3 mb-4 pb-4 border-b border-theme-divider">
+          <div className="w-10 h-10 rounded-lg bg-ps-neon-blue/10 border border-ps-neon-blue/20 flex items-center justify-center font-black text-ps-neon-blue text-[10px] tracking-tight">
+            GTA<br />VI
+          </div>
+          <div className="flex-1 min-w-0">
+            <div className="font-black text-theme-page text-sm">GTA VI</div>
+            <div className="text-[10px] text-theme-muted">PS5 Physical Edition</div>
+          </div>
+          <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 uppercase tracking-widest whitespace-nowrap">
+            Historical Low
+          </span>
+        </div>
+        {/* Price rows */}
+        <div className="space-y-0">
+          {rows.map(r => (
+            <div key={r.store} className="flex items-center gap-3 py-2.5 border-b border-theme-divider last:border-0">
+              <div className={`w-1.5 h-1.5 rounded-full shrink-0 ${r.best ? 'bg-green-400' : 'bg-theme-faint/20'}`} />
+              <span className="text-xs text-theme-page flex-1">{r.store}</span>
+              <div className="text-right">
+                {r.was && <span className="text-[10px] text-theme-faint line-through mr-1.5">{r.was}</span>}
+                <span className={`text-xs font-black ${r.best ? 'text-green-400' : 'text-theme-page'}`}>{r.price}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+        {/* Alert footer */}
+        <div className="mt-4 p-2.5 rounded-xl bg-amber-500/8 border border-amber-500/15 text-[10px] font-black text-amber-500 uppercase tracking-widest">
+          Price drop alert available soon
+        </div>
+      </div>
+    </div>
+  );
+}
+
 /* ─── Stores marquee ─────────────────────────────────────────── */
 const STORES = ['AMAZON', 'FLIPKART', 'CROMA', 'RELIANCE DIGITAL', 'VIJAY SALES', 'BLINKIT', 'ZEPTO', 'INSTAMART'];
 
@@ -265,28 +307,29 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 mb-14">
               <Link
                 href="/tracker"
-                className="ps-button ps-button-primary w-auto inline-flex items-center gap-2 px-8 py-4 text-sm"
+                className="ps-button ps-button-primary w-auto inline-flex px-8 py-4 text-sm"
               >
-                <Search className="w-4 h-4" /> Check Stock Now
+                Check Stock Now
               </Link>
               <Link
                 href="/news"
                 className="ps-button w-auto inline-flex items-center gap-2 px-8 py-4 text-sm bg-theme-card border border-theme-card text-theme-page hover:border-theme-nav transition-colors"
               >
-                <Newspaper className="w-4 h-4" /> Latest PS5 News
-                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+                Latest PS5 News
+                <ArrowRight className="w-3.5 h-3.5" />
               </Link>
             </div>
 
-            {/* Social proof strip */}
-            <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-widest text-theme-faint">
+            {/* Social proof — PS symbols, no generic icons */}
+            <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-theme-faint">
               {[
-                { icon: ShieldCheck, t: '6 Verified Stores' },
-                { icon: Zap,         t: 'Sub-1s Alerts'     },
-                { icon: Bell,        t: 'Zero Cost'          },
-              ].map(({ icon: I, t }) => (
-                <span key={t} className="flex items-center gap-1.5">
-                  <I className="w-3.5 h-3.5 text-ps-neon-blue" /> {t}
+                { sym: '○', t: '6 Stores Tracked' },
+                { sym: '□', t: 'Sub-1s Alerts'    },
+                { sym: '△', t: '₹0 Cost Forever'  },
+              ].map(({ sym, t }) => (
+                <span key={t} className="flex items-center gap-2">
+                  <span className="text-ps-neon-blue font-black text-base leading-none">{sym}</span>
+                  {t}
                 </span>
               ))}
             </div>
@@ -381,34 +424,71 @@ export default function LandingPage() {
         </section>
       ))}
 
+      {/* ══ GAME DEALS TEASER ══════════════════════════════════ */}
+      <section className="py-24 px-6 md:px-12 lg:px-20 bg-hero-alt">
+        <div className="max-w-6xl mx-auto">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+            {/* Text */}
+            <div className="relative">
+              <span className="absolute -top-10 -left-4 text-[120px] font-black leading-none select-none pointer-events-none opacity-[0.04] text-amber-500">
+                04
+              </span>
+              <div className="relative">
+                <span className="inline-block text-[10px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-4 border text-amber-500 bg-amber-500/10 border-amber-500/25">
+                  Coming Next
+                </span>
+                <h2 className="text-3xl md:text-4xl font-black text-theme-page leading-tight mb-5">
+                  Game price comparison.<br />Historical lows. Deal alerts.
+                </h2>
+                <p className="text-base text-theme-muted leading-relaxed mb-8 max-w-md">
+                  We&apos;re building cross-platform game price tracking for PS5 titles across Amazon, Flipkart, and PlayStation Store. Historical low badges, wishlist price alerts, and a deal hub — free.
+                </p>
+                <div className="flex flex-wrap gap-2 mb-8">
+                  {['GTA VI', 'Spider-Man 2', 'FC 26', 'God of War', 'NBA 2K26', 'Elden Ring'].map(g => (
+                    <span key={g} className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-theme-divider text-theme-muted bg-theme-card">
+                      {g}
+                    </span>
+                  ))}
+                </div>
+                <Link href="/tracker#subscribe" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-500 group">
+                  Get Early Access <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
+              </div>
+            </div>
+            {/* Visual */}
+            <div className="flex justify-center lg:justify-end">
+              <MockGamePrice />
+            </div>
+          </div>
+        </div>
+      </section>
+
       {/* ══ CTA ════════════════════════════════════════════════ */}
       <section className="relative py-32 px-6 overflow-hidden bg-hero">
-        {/* Blue glow from below */}
         <div
           className="absolute inset-0 pointer-events-none"
           style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 100%, rgba(0,112,255,0.15) 0%, transparent 70%)' }}
         />
-        {/* PS symbol watermarks */}
         <span aria-hidden className="absolute top-8 left-[10%] text-[200px] font-black leading-none select-none pointer-events-none dark:text-white/[0.015] text-black/[0.02]">○</span>
         <span aria-hidden className="absolute bottom-8 right-[8%] text-[150px] font-black leading-none select-none pointer-events-none dark:text-white/[0.015] text-black/[0.02]">□</span>
 
         <div className="relative max-w-3xl mx-auto text-center">
           <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] mb-6">
-            The next restock is happening
+            Stock alerts today. Game deals tomorrow.
           </p>
           <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.88] text-theme-page mb-6">
-            Is it in stock<br />
-            <span className="dark:text-gradient text-gradient-light">near you?</span>
+            Your PS5<br />
+            <span className="dark:text-gradient text-gradient-light">companion.</span>
           </h2>
           <p className="text-theme-muted text-lg mb-12 leading-relaxed">
-            Enter your pincode. We scan 6 retailers instantly.
-            Subscribe once and we alert you the moment it restocks — free, forever.
+            Hardware restocks, game price history, and news —<br className="hidden sm:block" />
+            built for Indian gamers. Free forever.
           </p>
           <Link
             href="/tracker"
-            className="ps-button ps-button-primary w-auto inline-flex items-center gap-2 px-10 py-5 text-base animate-glow-pulse"
+            className="ps-button ps-button-primary w-auto inline-flex px-10 py-5 text-base animate-glow-pulse"
           >
-            <Search className="w-5 h-5" /> Open PS5 Scanner
+            Track Your City
           </Link>
           <p className="text-theme-faint text-xs mt-5 uppercase tracking-widest font-bold">No app · No payment · Just alerts</p>
         </div>
