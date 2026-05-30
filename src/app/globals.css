@@ -2,49 +2,138 @@
 
 @theme {
   --color-ps-blue: #00439c;
-  --color-ps-black: #000000;
+  --color-ps-neon-blue: #0070ff;
+  --color-ps-black: #09090b;
   --color-ps-white: #ffffff;
-  --color-ps-gray: #f2f2f2;
+  --color-ps-gray: #18181b;
 }
 
+/* ── Theme CSS variables ─────────────────────────────────────── */
+:root {
+  --bg-page: #f9f9fb;
+  --text-page: #09090b;
+  --nav-bg: rgba(249, 249, 251, 0.85);
+  --nav-border: rgba(0, 0, 0, 0.07);
+  --section-bg: rgba(0, 0, 0, 0.025);
+  --section-border: rgba(0, 0, 0, 0.04);
+  --card-bg: rgba(0, 0, 0, 0.02);
+  --card-border: rgba(0, 0, 0, 0.08);
+  --card-shadow: 0 2px 8px 0 rgba(0, 0, 0, 0.06);
+  --ticker-bg: rgba(249, 249, 251, 0.9);
+  --ticker-fader: #f9f9fb;
+  --text-muted: #71717a;
+  --text-faint: #a1a1aa;
+  --form-bg: rgba(255, 255, 255, 0.85);
+  --form-bg-solid: #ffffff;
+  --form-border: rgba(0, 0, 0, 0.1);
+  --input-bg: rgba(0, 0, 0, 0.03);
+  --input-border: rgba(0, 0, 0, 0.1);
+  --input-text: #09090b;
+  --divider: rgba(0, 0, 0, 0.08);
+  --item-bg: rgba(0, 0, 0, 0.02);
+  --item-border: rgba(0, 0, 0, 0.06);
+}
+
+.dark {
+  --bg-page: #09090b;
+  --text-page: #ffffff;
+  --nav-bg: rgba(9, 9, 11, 0.75);
+  --nav-border: rgba(255, 255, 255, 0.05);
+  --section-bg: rgba(0, 0, 0, 0.25);
+  --section-border: rgba(255, 255, 255, 0.03);
+  --card-bg: rgba(255, 255, 255, 0.03);
+  --card-border: rgba(255, 255, 255, 0.08);
+  --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  --ticker-bg: rgba(9, 9, 11, 0.8);
+  --ticker-fader: #09090b;
+  --text-muted: #a1a1aa;
+  --text-faint: #71717a;
+  --form-bg: rgba(24, 24, 27, 0.4);
+  --form-bg-solid: #18181b;
+  --form-border: rgba(255, 255, 255, 0.1);
+  --input-bg: rgba(255, 255, 255, 0.04);
+  --input-border: rgba(255, 255, 255, 0.08);
+  --input-text: #ffffff;
+  --divider: rgba(255, 255, 255, 0.08);
+  --item-bg: rgba(255, 255, 255, 0.02);
+  --item-border: rgba(255, 255, 255, 0.05);
+}
+
+/* ── Semantic theme utilities ────────────────────────────────── */
+.bg-theme-page     { background-color: var(--bg-page); }
+.text-theme-page   { color: var(--text-page); }
+.bg-theme-nav      { background-color: var(--nav-bg); }
+.border-theme-nav  { border-color: var(--nav-border); }
+.bg-theme-section  { background-color: var(--section-bg); }
+.border-theme-section { border-color: var(--section-border); }
+.bg-theme-card     { background-color: var(--card-bg); }
+.border-theme-card { border-color: var(--card-border); }
+.text-theme-muted  { color: var(--text-muted); }
+.text-theme-faint  { color: var(--text-faint); }
+.bg-theme-form     { background-color: var(--form-bg); }
+.border-theme-form { border-color: var(--form-border); }
+.border-theme-divider { border-color: var(--divider); }
+.bg-theme-item     { background-color: var(--item-bg); }
+.border-theme-item { border-color: var(--item-border); }
+.text-theme-input  { color: var(--input-text); }
+.bg-theme-input    { background-color: var(--input-bg); }
+.border-theme-input { border-color: var(--input-border); }
+
+.ticker-fader-left  { background: linear-gradient(to right, var(--ticker-fader), transparent); }
+.ticker-fader-right { background: linear-gradient(to left,  var(--ticker-fader), transparent); }
+
+/* ── Base ────────────────────────────────────────────────────── */
 @layer base {
   body {
-    background-color: white;
-    color: black;
+    background-color: var(--bg-page);
+    color: var(--text-page);
     font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     -webkit-tap-highlight-color: transparent;
   }
 }
 
+/* ── Components ──────────────────────────────────────────────── */
 @layer components {
   .ps-button {
     display: flex;
     align-items: center;
     justify-content: center;
-    padding: 1.25rem 2rem; /* Increased for mobile touch */
-    border-radius: 1rem; /* More modern rounded square for mobile */
+    padding: 1.25rem 2rem;
+    border-radius: 1rem;
     font-weight: 800;
     text-transform: uppercase;
     letter-spacing: 0.05em;
     transition: all 0.2s ease;
     width: 100%;
   }
-  
+
   .ps-button:active {
     transform: scale(0.96);
   }
-  
+
   .ps-button-primary {
-    background-color: var(--color-ps-blue);
+    background: var(--color-ps-neon-blue);
     color: white;
-    box-shadow: 0 10px 15px -3px rgba(0, 67, 156, 0.3);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+  }
+
+  .ps-button-primary:hover {
+    background: #0060df;
   }
 
   .ps-card {
-    background-color: white;
-    border: 1px solid #f1f5f9;
+    background-color: var(--card-bg);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid var(--card-border);
     border-radius: 1.5rem;
-    box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.05);
+    box-shadow: var(--card-shadow);
+    transition: transform 0.3s ease, border-color 0.3s ease;
+  }
+
+  .ps-card:hover {
+    border-color: rgba(128, 128, 128, 0.2);
+    transform: translateY(-4px);
   }
 
   .status-pill {
