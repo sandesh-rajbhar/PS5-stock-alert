@@ -6,7 +6,7 @@ import StockStatusCard from '@/components/StockStatusCard';
 import NoticeCarousel from '@/components/NoticeCarousel';
 import Footer from '@/components/Footer';
 import { StockStatus } from '@/lib/types';
-import { ShieldCheck, Zap, ScanSearch } from 'lucide-react';
+import { ShieldCheck, Zap } from 'lucide-react';
 
 const MODELS = [
   'Slim Disc', 'Slim Digital', 'Disc Standard', 'Digital Edition',
@@ -60,11 +60,6 @@ export default function TrackerPage() {
         <div className="hero-glow absolute inset-0 pointer-events-none" />
 
         <div className="relative flex flex-col items-center gap-6 animate-slide-up">
-          {/* Icon badge */}
-          <div className="w-16 h-16 rounded-2xl bg-ps-neon-blue/10 border border-ps-neon-blue/20 flex items-center justify-center">
-            <ScanSearch className="w-8 h-8 text-ps-neon-blue" />
-          </div>
-
           <div>
             <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.2em] mb-2">Real-time · India-wide</p>
             <h1 className="text-4xl sm:text-5xl md:text-6xl font-black uppercase tracking-tight leading-[0.9] text-theme-page">
