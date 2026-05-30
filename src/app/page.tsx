@@ -463,37 +463,6 @@ export default function LandingPage() {
         </div>
       </section>
 
-      {/* ══ CTA ════════════════════════════════════════════════ */}
-      <section className="relative py-32 px-6 overflow-hidden bg-hero">
-        <div
-          className="absolute inset-0 pointer-events-none"
-          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 100%, rgba(0,112,255,0.15) 0%, transparent 70%)' }}
-        />
-        <span aria-hidden className="absolute top-8 left-[10%] text-[200px] font-black leading-none select-none pointer-events-none dark:text-white/[0.015] text-black/[0.02]">○</span>
-        <span aria-hidden className="absolute bottom-8 right-[8%] text-[150px] font-black leading-none select-none pointer-events-none dark:text-white/[0.015] text-black/[0.02]">□</span>
-
-        <div className="relative max-w-3xl mx-auto text-center">
-          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] mb-6">
-            Stock alerts today. Game deals tomorrow.
-          </p>
-          <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.88] text-theme-page mb-6">
-            Your PS5<br />
-            <span className="dark:text-gradient text-gradient-light">companion.</span>
-          </h2>
-          <p className="text-theme-muted text-lg mb-12 leading-relaxed">
-            Hardware restocks, game price history, and news —<br className="hidden sm:block" />
-            built for Indian gamers. Free forever.
-          </p>
-          <Link
-            href="/tracker"
-            className="ps-button ps-button-primary w-auto inline-flex px-10 py-5 text-base animate-glow-pulse"
-          >
-            Track Your City
-          </Link>
-          <p className="text-theme-faint text-xs mt-5 uppercase tracking-widest font-bold">No app · No payment · Just alerts</p>
-        </div>
-      </section>
-
       <Footer />
     </main>
   );
