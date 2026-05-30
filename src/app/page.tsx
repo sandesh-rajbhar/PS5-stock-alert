@@ -145,9 +145,9 @@ function MockNews() {
 
 function MockGamePrice() {
   const rows = [
-    { store: 'Amazon India',     price: '₹3,799', was: '₹4,999', best: true  },
-    { store: 'PlayStation Store',price: '₹4,499', was: null,     best: false },
-    { store: 'Flipkart',         price: '₹3,999', was: null,     best: false },
+    { store: 'Amazon India',     price: '₹3,499', was: '₹4,999', best: true  },
+    { store: 'PlayStation Store',price: '₹4,299', was: null,     best: false },
+    { store: 'Flipkart',         price: '₹3,799', was: null,     best: false },
   ];
   return (
     <div className="relative w-full max-w-xs mx-auto">
@@ -155,12 +155,23 @@ function MockGamePrice() {
       <div className="ps-card p-5 relative z-10">
         {/* Game header */}
         <div className="flex items-center gap-3 mb-4 pb-4 border-b border-theme-divider">
-          <div className="w-10 h-10 rounded-lg bg-ps-neon-blue/10 border border-ps-neon-blue/20 flex items-center justify-center font-black text-ps-neon-blue text-[10px] tracking-tight">
-            GTA<br />VI
+          {/* Cover art */}
+          <img
+            src="https://images.igdb.com/igdb/image/upload/t_cover_small/co6ub0.png"
+            alt="Marvel's Spider-Man 2"
+            className="w-10 h-14 rounded-lg object-cover shrink-0 shadow"
+            onError={(e) => {
+              const t = e.currentTarget;
+              t.style.display = 'none';
+              (t.nextElementSibling as HTMLElement | null)?.style.setProperty('display', 'flex');
+            }}
+          />
+          <div className="w-10 h-14 rounded-lg bg-red-600/10 border border-red-500/20 items-center justify-center font-black text-red-500 text-[9px] tracking-tight text-center leading-tight shrink-0 hidden">
+            SM2
           </div>
           <div className="flex-1 min-w-0">
-            <div className="font-black text-theme-page text-sm">GTA VI</div>
-            <div className="text-[10px] text-theme-muted">PS5 Physical Edition</div>
+            <div className="font-black text-theme-page text-sm leading-tight">Marvel's Spider-Man 2</div>
+            <div className="text-[10px] text-theme-muted mt-0.5">PS5 Physical Edition</div>
           </div>
           <span className="text-[8px] font-black text-amber-500 bg-amber-500/10 px-2 py-0.5 rounded-full border border-amber-500/20 uppercase tracking-widest whitespace-nowrap">
             Historical Low
@@ -444,7 +455,7 @@ export default function LandingPage() {
                   We&apos;re building cross-platform game price tracking for PS5 titles across Amazon, Flipkart, and PlayStation Store. Historical low badges, wishlist price alerts, and a deal hub — free.
                 </p>
                 <div className="flex flex-wrap gap-2 mb-8">
-                  {['GTA VI', 'Spider-Man 2', 'FC 26', 'God of War', 'NBA 2K26', 'Elden Ring'].map(g => (
+                  {['Spider-Man 2', 'God of War', 'FC 26', 'Elden Ring', 'Hogwarts Legacy', 'NBA 2K25'].map(g => (
                     <span key={g} className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-theme-divider text-theme-muted bg-theme-card">
                       {g}
                     </span>
