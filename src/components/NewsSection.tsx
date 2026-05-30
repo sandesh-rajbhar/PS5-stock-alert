@@ -1,7 +1,8 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { ExternalLink, Newspaper } from 'lucide-react';
+import Link from 'next/link';
+import { ExternalLink, Newspaper, ArrowRight } from 'lucide-react';
 import type { NewsItem } from '@/app/api/news/route';
 
 function timeAgo(dateStr: string): string {
@@ -36,7 +37,7 @@ export default function NewsSection() {
   useEffect(() => {
     fetch('/api/news')
       .then(r => r.json())
-      .then(data => { setItems(data); setLoading(false); })
+      .then(data => { setItems((data as NewsItem[]).slice(0, 6)); setLoading(false); })
       .catch(() => setLoading(false));
   }, []);
 
@@ -57,6 +58,12 @@ export default function NewsSection() {
               From Push Square, PlayStation Blog &amp; VGC
             </p>
           </div>
+          <Link
+            href="/news"
+            className="shrink-0 flex items-center gap-1.5 text-[10px] font-black uppercase tracking-widest text-ps-neon-blue hover:underline"
+          >
+            View All <ArrowRight className="w-3.5 h-3.5" />
+          </Link>
         </div>
 
         {/* Grid */}

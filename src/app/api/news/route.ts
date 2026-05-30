@@ -28,7 +28,7 @@ function attr(xml: string, tagName: string, attrName: string): string {
 
 function parseItems(xml: string, source: string, sourceColor: string): NewsItem[] {
   const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>/g) ?? [];
-  return blocks.slice(0, 5).flatMap((block): NewsItem[] => {
+  return blocks.slice(0, 6).flatMap((block): NewsItem[] => {
     const title = tag(block, 'title');
     const link  = tag(block, 'link') || attr(block, 'link', 'href');
     if (!title || !link) return [];
@@ -73,7 +73,7 @@ export async function GET() {
     .filter((r): r is PromiseFulfilledResult<NewsItem[]> => r.status === 'fulfilled')
     .flatMap(r => r.value)
     .sort((a, b) => new Date(b.pubDate).getTime() - new Date(a.pubDate).getTime())
-    .slice(0, 9);
+    .slice(0, 12);
 
   return NextResponse.json(items, {
     headers: { 'Cache-Control': 's-maxage=3600, stale-while-revalidate=86400' },
