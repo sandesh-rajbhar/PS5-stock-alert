@@ -6,6 +6,7 @@ import StockStatusCard from '@/components/StockStatusCard';
 import NoticeCarousel from '@/components/NoticeCarousel';
 import Footer from '@/components/Footer';
 import ThemeToggle from '@/components/ThemeToggle';
+import NewsSection from '@/components/NewsSection';
 import { StockStatus } from '@/lib/types';
 import { Zap, ShieldCheck } from 'lucide-react';
 
@@ -136,6 +137,7 @@ export default function Home() {
         </div>
       </section>
 
+      <NewsSection />
       <Footer />
     </main>
   );
