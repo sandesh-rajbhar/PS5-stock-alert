@@ -406,9 +406,9 @@ export default function LandingPage() {
                     </span>
                   ))}
                 </div>
-                <Link href="/tracker#subscribe" className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-500 group">
-                  Get Early Access <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
-                </Link>
+                <p className="text-xs font-bold text-theme-faint">
+                  Subscribe on the <Link href="/tracker" className="text-ps-neon-blue underline underline-offset-2">PS5 Scanner</Link> page to get notified when this launches.
+                </p>
               </div>
             </div>
             {/* Visual */}
