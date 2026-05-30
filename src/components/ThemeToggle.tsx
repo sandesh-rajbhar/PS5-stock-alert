@@ -16,7 +16,7 @@ export default function ThemeToggle() {
 
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="w-28 h-8" />;
+  if (!mounted) return <div className="w-20 h-8" />;
 
   return (
     <div
@@ -39,7 +39,6 @@ export default function ThemeToggle() {
               }`}
           >
             <Icon className="w-3.5 h-3.5 shrink-0" />
-            <span className="hidden sm:inline">{label}</span>
           </button>
         );
       })}
