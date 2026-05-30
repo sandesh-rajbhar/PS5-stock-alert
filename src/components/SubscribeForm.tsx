@@ -187,7 +187,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
             <div className="flex-grow border-t border-theme-divider"></div>
           </div>
 
-          <div className="grid grid-cols-3 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-2">
             <a
               href="https://blinkit.com/prn/sony-ps5-console-slim/prid/547392"
               target="_blank"

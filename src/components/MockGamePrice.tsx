@@ -14,10 +14,9 @@ export default function MockGamePrice() {
         {/* Game header */}
         <div className="flex items-center gap-3 mb-4 pb-4 border-b border-theme-divider">
           <img
-            src="https://images.igdb.com/igdb/image/upload/t_cover_small/co6ub0.png"
+            src="/spiderman.jpg"
             alt="Marvel's Spider-Man 2"
             className="w-10 h-14 rounded-lg object-cover shrink-0 shadow"
-            onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
           <div className="flex-1 min-w-0">
             <div className="font-black text-theme-page text-sm leading-tight">Marvel&apos;s Spider-Man 2</div>

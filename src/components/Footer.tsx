@@ -5,7 +5,7 @@ import { Mail, MessageSquare, ShieldCheck, Heart, ExternalLink } from 'lucide-re
 export default function Footer() {
   return (
     <footer className="bg-theme-section border-t border-theme-section backdrop-blur-md py-16 sm:py-20 px-6 sm:px-10 lg:px-16 text-zinc-400 select-none">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-12 lg:gap-16 mb-16">
+      <div className="max-w-7xl mx-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8 sm:gap-12 lg:gap-16 mb-16">
         {/* Brand Info & Disclaimer */}
         <div className="space-y-5">
           <h4 className="font-black tracking-tighter text-theme-page text-xl">PS DEALS</h4>

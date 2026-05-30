@@ -56,7 +56,7 @@ export default function TrackerPage() {
       <NoticeCarousel />
 
       {/* Page hero */}
-      <section className="px-4 py-14 md:py-20 max-w-4xl mx-auto text-center relative">
+      <section className="px-4 py-10 md:py-20 max-w-4xl mx-auto text-center relative">
         <div className="hero-glow absolute inset-0 pointer-events-none" />
 
         <div className="relative flex flex-col items-center gap-6 animate-slide-up">

@@ -49,7 +49,7 @@ function NewsCard({ item, featured = false }: { item: NewsItem; featured?: boole
       className={`ps-card overflow-hidden flex flex-col group cursor-pointer ${featured ? 'sm:col-span-2 lg:col-span-3' : ''}`}
     >
       {/* Thumbnail */}
-      <div className={`relative overflow-hidden bg-theme-card shrink-0 ${featured ? 'h-64 sm:h-72' : 'h-44'}`}>
+      <div className={`relative overflow-hidden bg-theme-card shrink-0 ${featured ? 'h-48 sm:h-64 lg:h-72' : 'h-40 sm:h-44'}`}>
         {item.image ? (
           <img
             src={item.image}
@@ -159,7 +159,7 @@ export default function NewsPage() {
                 <button
                   key={src}
                   onClick={() => setFilter(src)}
-                  className={`shrink-0 px-3 py-1.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border
+                  className={`shrink-0 px-3 py-2.5 rounded-full text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer border min-h-[36px]
                     ${active
                       ? 'text-white border-transparent'
                       : 'text-theme-muted border-theme-nav hover:text-theme-page bg-theme-card'

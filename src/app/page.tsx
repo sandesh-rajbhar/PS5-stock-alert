@@ -225,7 +225,7 @@ export default function LandingPage() {
           style={{ background: 'radial-gradient(ellipse 40% 40% at 0% 80%, rgba(0,48,135,0.08) 0%, transparent 70%)' }}
         />
 
-        <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-16 lg:gap-8 items-center py-20">
+        <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-8 lg:gap-8 items-center py-14 md:py-20">
 
           {/* ── Left: Copy ── */}
           <div className="max-w-2xl">
@@ -241,14 +241,14 @@ export default function LandingPage() {
             </div>
 
             {/* Headline — staggered weights */}
-            <h1 className="font-black uppercase leading-[0.88] mb-8 text-theme-page">
-              <span className="block text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-light tracking-tight opacity-60">
+            <h1 className="font-black uppercase leading-[0.9] mb-8 text-theme-page">
+              <span className="block text-4xl sm:text-5xl md:text-7xl xl:text-8xl font-light tracking-tight opacity-60">
                 Never miss
               </span>
-              <span className="block text-5xl sm:text-6xl md:text-7xl xl:text-8xl tracking-tight dark:text-gradient text-gradient-light">
+              <span className="block text-4xl sm:text-5xl md:text-7xl xl:text-8xl tracking-tight dark:text-gradient text-gradient-light">
                 a PS5
               </span>
-              <span className="block text-5xl sm:text-6xl md:text-7xl xl:text-8xl tracking-tight">
+              <span className="block text-4xl sm:text-5xl md:text-7xl xl:text-8xl tracking-tight">
                 restock.
               </span>
             </h1>
@@ -263,13 +263,13 @@ export default function LandingPage() {
             <div className="flex flex-col sm:flex-row gap-3 mb-14">
               <Link
                 href="/tracker"
-                className="ps-button ps-button-primary w-auto inline-flex px-8 py-4 text-sm"
+                className="ps-button ps-button-primary w-full sm:w-auto inline-flex px-8 py-4 text-sm"
               >
                 Check Stock Now
               </Link>
               <Link
                 href="/news"
-                className="ps-button w-auto inline-flex items-center gap-2 px-8 py-4 text-sm bg-theme-card border border-theme-card text-theme-page hover:border-theme-nav transition-colors"
+                className="ps-button w-full sm:w-auto inline-flex items-center gap-2 px-8 py-4 text-sm bg-theme-card border border-theme-card text-theme-page hover:border-theme-nav transition-colors"
               >
                 Latest PS5 News
                 <ArrowRight className="w-3.5 h-3.5" />
@@ -335,7 +335,7 @@ export default function LandingPage() {
           className={`py-24 px-6 md:px-12 lg:px-20 ${idx % 2 === 1 ? 'bg-hero-alt' : 'bg-hero'}`}
         >
           <div className="max-w-6xl mx-auto">
-            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center ${flip ? 'lg:[&>*:first-child]:order-2' : ''}`}>
+            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center ${flip ? 'lg:[&>*:first-child]:order-2' : ''}`}>
 
               {/* Text side */}
               <div className="relative">
@@ -383,7 +383,7 @@ export default function LandingPage() {
       {/* ══ GAME DEALS TEASER ══════════════════════════════════ */}
       <section className="py-24 px-6 md:px-12 lg:px-20 bg-hero-alt">
         <div className="max-w-6xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center">
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center">
             {/* Text */}
             <div className="relative">
               <span className="absolute -top-10 -left-4 text-[120px] font-black leading-none select-none pointer-events-none opacity-[0.04] text-amber-500">
