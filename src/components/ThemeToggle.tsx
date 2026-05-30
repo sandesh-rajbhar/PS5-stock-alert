@@ -16,13 +16,13 @@ export default function ThemeToggle() {
 
   useEffect(() => setMounted(true), []);
 
-  if (!mounted) return <div className="w-32 h-8" />;
+  if (!mounted) return <div className="w-28 h-8" />;
 
   return (
     <div
       role="group"
       aria-label="Color theme"
-      className="flex items-center rounded-lg border border-theme-nav bg-theme-card overflow-hidden"
+      className="flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/40"
     >
       {OPTIONS.map(({ value, Icon, label }) => {
         const active = theme === value;
@@ -30,12 +30,12 @@ export default function ThemeToggle() {
           <button
             key={value}
             onClick={() => setTheme(value)}
-            title={`Switch to ${label} theme`}
+            title={`${label} theme`}
             aria-pressed={active}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 text-[10px] font-black uppercase tracking-widest transition-all cursor-pointer
+            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[9px] text-[10px] font-bold uppercase tracking-widest transition-all duration-150 cursor-pointer select-none
               ${active
-                ? 'bg-ps-neon-blue text-white'
-                : 'text-theme-muted hover:text-theme-page hover:bg-theme-card'
+                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
+                : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
               }`}
           >
             <Icon className="w-3.5 h-3.5 shrink-0" />
