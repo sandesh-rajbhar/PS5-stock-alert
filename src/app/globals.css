@@ -8,6 +8,24 @@
   --color-ps-gray: #18181b;
 }
 
+/* ── Extended theme vars ─────────────────────────────────────── */
+:root {
+  --bg-hero: #f8f9ff;
+  --bg-hero-alt: #f0f4ff;
+  --bg-stats: #e8f0ff;
+  --text-stat: #003087;
+}
+.dark {
+  --bg-hero: #050508;
+  --bg-hero-alt: #07080f;
+  --bg-stats: #07080f;
+  --text-stat: #ffffff;
+}
+.bg-hero        { background-color: var(--bg-hero); }
+.bg-hero-alt    { background-color: var(--bg-hero-alt); }
+.bg-stats       { background-color: var(--bg-stats); }
+.text-stat      { color: var(--text-stat); }
+
 /* ── Theme CSS variables ─────────────────────────────────────── */
 :root {
   --bg-page: #f9f9fb;
@@ -173,6 +191,21 @@
 }
 .animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
 .animate-float      { animation: float 4s ease-in-out infinite; }
+
+@keyframes marquee-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-stores {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 28s linear infinite;
+}
+.marquee-stores-reverse {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 28s linear infinite reverse;
+}
 
 .text-gradient {
   background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 50%, #0070ff 100%);

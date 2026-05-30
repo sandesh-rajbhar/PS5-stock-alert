@@ -1,257 +1,416 @@
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import { Search, Bell, Newspaper, ArrowRight, Zap, ShieldCheck, MapPin, ChevronRight } from 'lucide-react';
+import {
+  MapPin, Bell, Newspaper, ArrowRight,
+  Check, X, Search, Zap, ShieldCheck,
+} from 'lucide-react';
 
-const STORES = ['Amazon', 'Flipkart', 'Croma', 'Reliance Digital', 'Vijay Sales'];
-const QC_STORES = ['Blinkit', 'Zepto', 'Instamart'];
+/* ─── Mock product-demo components (static, no JS) ──────────── */
 
-const STEPS = [
+function MockScanner() {
+  const rows = [
+    { store: 'Amazon India',     ok: true,  price: '₹54,990' },
+    { store: 'Flipkart',         ok: false, price: '---'     },
+    { store: 'Croma',            ok: true,  price: '₹55,490' },
+  ];
+  return (
+    <div className="relative w-full max-w-xs mx-auto">
+      {/* Decorative PS symbol watermark */}
+      <span
+        aria-hidden
+        className="absolute -top-8 -right-4 text-[140px] font-black leading-none select-none pointer-events-none
+                   dark:text-ps-neon-blue/[0.06] text-ps-neon-blue/[0.08]"
+      >
+        ○
+      </span>
+      <span
+        aria-hidden
+        className="absolute -bottom-4 -left-6 text-[80px] font-black leading-none select-none pointer-events-none
+                   dark:text-ps-neon-blue/[0.05] text-ps-neon-blue/[0.06]"
+      >
+        □
+      </span>
+
+      {/* Scanner card */}
+      <div className="ps-card p-5 relative z-10">
+        {/* Pincode row */}
+        <div className="flex items-center gap-3 p-3 bg-theme-input rounded-xl border border-theme-input mb-5">
+          <MapPin className="w-4 h-4 text-ps-neon-blue shrink-0" />
+          <div className="flex-1 min-w-0">
+            <div className="font-black text-theme-page text-sm">400001</div>
+            <div className="text-[10px] text-theme-muted truncate">Mumbai, Maharashtra</div>
+          </div>
+          <span className="relative flex h-2 w-2 shrink-0">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-green-400 opacity-75" />
+            <span className="relative inline-flex rounded-full h-2 w-2 bg-green-400" />
+          </span>
+        </div>
+
+        {/* Result rows */}
+        <div className="space-y-1 mb-5">
+          {rows.map(r => (
+            <div key={r.store} className="flex items-center gap-3 py-2.5 px-1 border-b border-theme-divider last:border-0">
+              <div className={`w-5 h-5 rounded-full flex items-center justify-center shrink-0 ${r.ok ? 'bg-green-500/10' : 'bg-red-500/10'}`}>
+                {r.ok
+                  ? <Check className="w-3 h-3 text-green-400" />
+                  : <X    className="w-3 h-3 text-red-400" />}
+              </div>
+              <span className="text-xs font-bold text-theme-page flex-1">{r.store}</span>
+              <span className={`text-xs font-black ${r.ok ? 'text-ps-neon-blue' : 'text-theme-faint'}`}>{r.price}</span>
+            </div>
+          ))}
+        </div>
+
+        {/* Alert badge */}
+        <div className="p-2.5 rounded-xl bg-ps-neon-blue/10 border border-ps-neon-blue/20 flex items-center gap-2">
+          <Bell className="w-3.5 h-3.5 text-ps-neon-blue shrink-0" />
+          <span className="text-[10px] font-black text-ps-neon-blue uppercase tracking-widest">Alert active · 400001</span>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockAlert() {
+  return (
+    <div className="relative w-full max-w-xs mx-auto space-y-3">
+      <span
+        aria-hidden
+        className="absolute top-1/2 -right-8 -translate-y-1/2 text-[100px] font-black leading-none select-none pointer-events-none
+                   dark:text-green-500/[0.05] text-green-500/[0.06]"
+      >
+        △
+      </span>
+
+      {/* Telegram notification mock */}
+      <div className="ps-card p-4 flex items-start gap-3">
+        <div className="w-9 h-9 rounded-xl bg-[#229ED9] flex items-center justify-center shrink-0 text-white font-black text-sm">
+          PS
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-black text-theme-faint uppercase tracking-widest mb-1">PS Deals Bot · Telegram</div>
+          <div className="text-sm font-black text-theme-page leading-snug">⚡ PS5 Slim Disc IN STOCK!</div>
+          <div className="text-xs text-theme-muted mt-0.5">Amazon India · ₹54,990</div>
+          <div className="mt-2 inline-flex items-center gap-1 text-[10px] font-black text-ps-neon-blue uppercase tracking-widest">
+            Buy Now <ArrowRight className="w-3 h-3" />
+          </div>
+        </div>
+      </div>
+
+      {/* Email notification mock */}
+      <div className="ps-card p-4 flex items-start gap-3 opacity-70">
+        <div className="w-9 h-9 rounded-xl bg-ps-neon-blue/10 border border-ps-neon-blue/20 flex items-center justify-center shrink-0">
+          <Bell className="w-4 h-4 text-ps-neon-blue" />
+        </div>
+        <div className="flex-1 min-w-0">
+          <div className="text-[10px] font-black text-theme-faint uppercase tracking-widest mb-1">Email Alert · psdeals.in</div>
+          <div className="text-sm font-black text-theme-page leading-snug">Stock alert for pincode 400001</div>
+          <div className="text-xs text-theme-muted mt-0.5">Croma · PS5 Disc Slim · ₹55,490</div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function MockNews() {
+  const cards = [
+    { source: 'Push Square',      color: '#f97316', title: 'PS5 Pro Confirmed for India Launch — Price & Date Revealed' },
+    { source: 'PlayStation Blog', color: '#0070ff', title: 'August PS Plus Games Announced: Three Big Titles Incoming'   },
+    { source: 'VGC',              color: '#a855f7', title: 'GTA VI Release Window Narrowed Down for PS5'                 },
+  ];
+  return (
+    <div className="relative w-full max-w-xs mx-auto space-y-3">
+      <span
+        aria-hidden
+        className="absolute -top-6 -left-8 text-[90px] font-black leading-none select-none pointer-events-none
+                   dark:text-purple-500/[0.06] text-purple-500/[0.07]"
+      >
+        ✕
+      </span>
+      {cards.map((c, i) => (
+        <div
+          key={c.source}
+          className="ps-card p-4 flex items-start gap-3"
+          style={{ opacity: 1 - i * 0.2, transform: `scale(${1 - i * 0.02})`, transformOrigin: 'top center' }}
+        >
+          <span
+            className="shrink-0 text-[9px] font-black uppercase tracking-widest px-2 py-1 rounded-full text-white mt-0.5"
+            style={{ backgroundColor: c.color }}
+          >
+            {c.source.split(' ')[0]}
+          </span>
+          <p className="text-xs font-bold text-theme-page leading-snug line-clamp-2">{c.title}</p>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+/* ─── Stores marquee ─────────────────────────────────────────── */
+const STORES = ['AMAZON', 'FLIPKART', 'CROMA', 'RELIANCE DIGITAL', 'VIJAY SALES', 'BLINKIT', 'ZEPTO', 'INSTAMART'];
+
+function StoresMarquee() {
+  const items = [...STORES, ...STORES];
+  return (
+    <div className="bg-ps-neon-blue overflow-hidden py-3 select-none">
+      <div className="marquee-stores">
+        {items.map((s, i) => (
+          <span key={i} className="flex items-center gap-4 mx-6 text-[11px] font-black text-white uppercase tracking-[0.15em] whitespace-nowrap">
+            {s}
+            <span className="w-1 h-1 rounded-full bg-white/40 shrink-0" />
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Stats ──────────────────────────────────────────────────── */
+const STATS = [
+  { value: '06',   label: 'Retailers\ntracked'       },
+  { value: '<1s',  label: 'Alert delay\nguaranteed'  },
+  { value: '₹0',   label: 'Cost,\nforever'           },
+  { value: '5+',   label: 'PS5 models\nmonitored'    },
+];
+
+/* ─── Features ───────────────────────────────────────────────── */
+const FEATURES = [
   {
     n: '01',
-    icon: MapPin,
-    title: 'Enter Pincode',
-    desc: 'Your local pincode lets us check store-specific availability in your delivery zone.',
+    accent: '#0070ff',
+    label: 'PS5 Scanner',
+    headline: '10 seconds from pincode to results.',
+    body: 'Enter your pincode and our scanner checks 6 Indian retailers simultaneously — showing you exactly what\'s in stock near your delivery address, not just nationally.',
+    cta: 'Try the Scanner',
+    href: '/tracker',
+    visual: <MockScanner />,
+    flip: false,
   },
   {
     n: '02',
-    icon: Search,
-    title: 'We Scan Instantly',
-    desc: 'Our bot checks Amazon, Flipkart, Croma, Reliance Digital, and Vijay Sales in real-time.',
+    accent: '#22c55e',
+    label: 'Instant Alerts',
+    headline: "You'll know before the listing goes viral.",
+    body: 'Subscribe with email or Telegram. We watch 24/7 and push an alert the moment stock appears — before scalpers, before the deal sites, before anyone else.',
+    cta: 'Set Up Alerts',
+    href: '/tracker#subscribe',
+    visual: <MockAlert />,
+    flip: true,
   },
   {
     n: '03',
-    icon: Bell,
-    title: 'Get Alerted',
-    desc: 'Instant email or Telegram push notification the moment stock appears — before it sells out.',
-  },
-];
-
-const FEATURES = [
-  {
-    icon: Search,
-    label: 'PS5 Scanner',
-    headline: 'Real-time stock check across 6+ Indian retailers',
-    desc: 'Enter your pincode and see live availability — national and local — across every major store.',
-    cta: 'Check Stock Now',
-    href: '/tracker',
-    accent: '#0070ff',
-  },
-  {
-    icon: Bell,
-    label: 'Instant Alerts',
-    headline: 'Email & Telegram push the moment stock drops',
-    desc: 'Subscribe once. We watch 24/7. You get an alert faster than anyone else — guaranteed.',
-    cta: 'Subscribe for Alerts',
-    href: '/tracker#subscribe',
-    accent: '#22c55e',
-  },
-  {
-    icon: Newspaper,
-    label: 'PS5 News',
-    headline: 'Latest from Push Square, PlayStation Blog & VGC',
-    desc: 'Aggregated PS5 news, game announcements, and deals — one place, always fresh.',
-    cta: 'Read Latest News',
-    href: '/news',
     accent: '#a855f7',
+    label: 'PS5 News Hub',
+    headline: 'Everything PS5. One feed.',
+    body: 'Aggregated from Push Square, PlayStation Blog, and VGC. No algorithm. No clutter. Just the most important PS5 news, refreshed every hour.',
+    cta: 'Read Today\'s News',
+    href: '/news',
+    visual: <MockNews />,
+    flip: false,
   },
 ];
 
+/* ─── Page ───────────────────────────────────────────────────── */
 export default function LandingPage() {
   return (
-    <main className="bg-theme-page text-theme-page overflow-hidden">
+    <main className="bg-hero text-theme-page overflow-x-hidden">
 
-      {/* ── Hero ──────────────────────────────────────────────────── */}
-      <section className="relative min-h-[92vh] flex flex-col items-center justify-center text-center px-4 py-20">
-        {/* Glow background */}
-        <div className="hero-glow absolute inset-0 pointer-events-none" />
+      {/* ══ HERO ═══════════════════════════════════════════════ */}
+      <section className="relative min-h-[95vh] flex items-center px-6 md:px-12 lg:px-20 overflow-hidden">
+        {/* Background glow */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 60% 70% at 100% 50%, rgba(0,112,255,0.12) 0%, transparent 70%)' }}
+        />
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 40% 40% at 0% 80%, rgba(0,48,135,0.08) 0%, transparent 70%)' }}
+        />
 
-        {/* Eyebrow */}
-        <div className="flex items-center gap-2 mb-6 animate-slide-up">
-          <span className="relative flex h-2 w-2">
-            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ps-neon-blue opacity-75" />
-            <span className="relative inline-flex rounded-full h-2 w-2 bg-ps-neon-blue" />
-          </span>
-          <span className="text-[10px] font-black uppercase tracking-[0.2em] text-ps-neon-blue">
-            Live · PS5 Tracker India
-          </span>
+        <div className="relative max-w-7xl mx-auto w-full grid grid-cols-1 lg:grid-cols-[1fr_420px] gap-16 lg:gap-8 items-center py-20">
+
+          {/* ── Left: Copy ── */}
+          <div className="max-w-2xl">
+            {/* Eyebrow */}
+            <div className="flex items-center gap-2 mb-8">
+              <span className="relative flex h-2 w-2">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-ps-neon-blue opacity-75" />
+                <span className="relative inline-flex rounded-full h-2 w-2 bg-ps-neon-blue" />
+              </span>
+              <span className="text-[10px] font-black uppercase tracking-[0.25em] text-ps-neon-blue">
+                Live · PS5 Tracker India
+              </span>
+            </div>
+
+            {/* Headline — staggered weights */}
+            <h1 className="font-black uppercase leading-[0.88] mb-8 text-theme-page">
+              <span className="block text-5xl sm:text-6xl md:text-7xl xl:text-8xl font-light tracking-tight opacity-60">
+                Never miss
+              </span>
+              <span className="block text-5xl sm:text-6xl md:text-7xl xl:text-8xl tracking-tight dark:text-gradient text-gradient-light">
+                a PS5
+              </span>
+              <span className="block text-5xl sm:text-6xl md:text-7xl xl:text-8xl tracking-tight">
+                restock.
+              </span>
+            </h1>
+
+            {/* Sub */}
+            <p className="text-base md:text-lg text-theme-muted leading-relaxed max-w-lg mb-10">
+              Real-time availability across Amazon, Flipkart, Croma &amp; more.
+              Instant email &amp; Telegram alerts. Completely free.
+            </p>
+
+            {/* CTAs */}
+            <div className="flex flex-col sm:flex-row gap-3 mb-14">
+              <Link
+                href="/tracker"
+                className="ps-button ps-button-primary w-auto inline-flex items-center gap-2 px-8 py-4 text-sm"
+              >
+                <Search className="w-4 h-4" /> Check Stock Now
+              </Link>
+              <Link
+                href="/news"
+                className="ps-button w-auto inline-flex items-center gap-2 px-8 py-4 text-sm bg-theme-card border border-theme-card text-theme-page hover:border-theme-nav transition-colors"
+              >
+                <Newspaper className="w-4 h-4" /> Latest PS5 News
+                <ArrowRight className="w-3.5 h-3.5 ml-1" />
+              </Link>
+            </div>
+
+            {/* Social proof strip */}
+            <div className="flex flex-wrap gap-5 text-[10px] font-black uppercase tracking-widest text-theme-faint">
+              {[
+                { icon: ShieldCheck, t: '6 Verified Stores' },
+                { icon: Zap,         t: 'Sub-1s Alerts'     },
+                { icon: Bell,        t: 'Zero Cost'          },
+              ].map(({ icon: I, t }) => (
+                <span key={t} className="flex items-center gap-1.5">
+                  <I className="w-3.5 h-3.5 text-ps-neon-blue" /> {t}
+                </span>
+              ))}
+            </div>
+          </div>
+
+          {/* ── Right: Product demo ── */}
+          <div className="hidden lg:block">
+            <MockScanner />
+          </div>
         </div>
 
-        {/* Headline */}
-        <h1
-          className="text-5xl sm:text-6xl md:text-8xl font-black uppercase tracking-tight leading-[0.88] mb-6 animate-slide-up"
-          style={{ animationDelay: '0.05s' }}
-        >
-          <span className="dark:text-gradient text-gradient-light">Never Miss</span>
-          <br />
-          <span className="text-theme-page">a PS5 Deal.</span>
-        </h1>
-
-        {/* Sub */}
-        <p
-          className="text-base sm:text-lg md:text-xl text-theme-muted max-w-xl mx-auto mb-10 leading-relaxed animate-slide-up font-medium"
-          style={{ animationDelay: '0.1s' }}
-        >
-          India&apos;s smartest PS5 stock tracker. Real-time availability,
-          instant alerts, and the latest deals — completely free.
-        </p>
-
-        {/* CTAs */}
-        <div
-          className="flex flex-col sm:flex-row items-center gap-3 mb-16 animate-slide-up"
-          style={{ animationDelay: '0.15s' }}
-        >
-          <Link
-            href="/tracker"
-            className="ps-button ps-button-primary px-8 py-4 text-sm animate-glow-pulse w-auto inline-flex items-center gap-2"
-          >
-            <Search className="w-4 h-4" /> Check Stock Now
-          </Link>
-          <Link
-            href="/news"
-            className="ps-button px-8 py-4 text-sm bg-theme-card border border-theme-card text-theme-page hover:border-ps-neon-blue/40 w-auto inline-flex items-center gap-2 transition-colors"
-          >
-            <Newspaper className="w-4 h-4" /> Latest PS5 News
-            <ArrowRight className="w-3.5 h-3.5" />
-          </Link>
-        </div>
-
-        {/* Stats strip */}
-        <div
-          className="flex flex-wrap items-center justify-center gap-4 sm:gap-8 text-[10px] font-black uppercase tracking-widest text-theme-faint animate-slide-up"
-          style={{ animationDelay: '0.2s' }}
-        >
-          {[
-            { icon: ShieldCheck, text: '6 Stores Tracked' },
-            { icon: Zap,         text: 'Instant Alerts'   },
-            { icon: Bell,        text: '100% Free'         },
-          ].map(({ icon: Icon, text }) => (
-            <span key={text} className="flex items-center gap-2">
-              <Icon className="w-3.5 h-3.5 text-ps-neon-blue" />
-              {text}
-            </span>
-          ))}
+        {/* Scroll hint */}
+        <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex flex-col items-center gap-1.5 opacity-30">
+          <span className="text-[9px] font-black uppercase tracking-widest text-theme-faint">Scroll</span>
+          <div className="w-px h-8 bg-theme-faint" />
         </div>
       </section>
 
-      {/* ── How it works ──────────────────────────────────────────── */}
-      <section className="py-24 px-4 bg-theme-section border-t border-theme-section">
+      {/* ══ MARQUEE ════════════════════════════════════════════ */}
+      <StoresMarquee />
+
+      {/* ══ STATS ══════════════════════════════════════════════ */}
+      <section className="bg-stats py-20 px-6">
         <div className="max-w-5xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.2em] mb-2">Simple by design</p>
-            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-theme-page">How It Works</h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 relative">
-            {/* connector line (desktop) */}
-            <div className="hidden md:block absolute top-10 left-[calc(16.66%+1rem)] right-[calc(16.66%+1rem)] h-px bg-gradient-to-r from-transparent via-ps-neon-blue/30 to-transparent" />
-
-            {STEPS.map(({ n, icon: Icon, title, desc }) => (
-              <div key={n} className="flex flex-col items-center text-center gap-4">
-                <div className="relative">
-                  <div className="w-20 h-20 rounded-2xl bg-ps-neon-blue/10 border border-ps-neon-blue/20 flex items-center justify-center">
-                    <Icon className="w-8 h-8 text-ps-neon-blue" />
-                  </div>
-                  <span className="absolute -top-2 -right-2 text-[10px] font-black text-ps-neon-blue bg-theme-page border border-ps-neon-blue/30 rounded-full w-6 h-6 flex items-center justify-center">
-                    {n}
-                  </span>
-                </div>
-                <h3 className="text-lg font-black uppercase tracking-tight text-theme-page">{title}</h3>
-                <p className="text-sm text-theme-muted leading-relaxed">{desc}</p>
+          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] text-center mb-14">
+            By the numbers
+          </p>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-0 divide-x divide-y md:divide-y-0 divide-theme-divider border border-theme-divider rounded-2xl overflow-hidden">
+            {STATS.map(({ value, label }) => (
+              <div key={value} className="flex flex-col items-center justify-center text-center py-10 px-4 bg-theme-card">
+                <span className="text-5xl md:text-6xl font-black text-ps-neon-blue leading-none mb-3">
+                  {value}
+                </span>
+                <span className="text-[10px] font-black text-theme-faint uppercase tracking-widest whitespace-pre-line leading-relaxed">
+                  {label}
+                </span>
               </div>
             ))}
           </div>
         </div>
       </section>
 
-      {/* ── Feature cards ─────────────────────────────────────────── */}
-      <section className="py-24 px-4">
-        <div className="max-w-6xl mx-auto">
-          <div className="text-center mb-16">
-            <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.2em] mb-2">Everything in one place</p>
-            <h2 className="text-3xl md:text-4xl font-black uppercase tracking-tight text-theme-page">What You Get</h2>
-          </div>
+      {/* ══ FEATURES ═══════════════════════════════════════════ */}
+      {FEATURES.map(({ n, accent, label, headline, body, cta, href, visual, flip }, idx) => (
+        <section
+          key={n}
+          className={`py-24 px-6 md:px-12 lg:px-20 ${idx % 2 === 1 ? 'bg-hero-alt' : 'bg-hero'}`}
+        >
+          <div className="max-w-6xl mx-auto">
+            <div className={`grid grid-cols-1 lg:grid-cols-2 gap-16 lg:gap-24 items-center ${flip ? 'lg:[&>*:first-child]:order-2' : ''}`}>
 
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-            {FEATURES.map(({ icon: Icon, label, headline, desc, cta, href, accent }) => (
-              <Link
-                key={label}
-                href={href}
-                className="ps-card p-6 flex flex-col gap-5 group cursor-pointer"
-              >
-                <div
-                  className="w-12 h-12 rounded-xl flex items-center justify-center"
-                  style={{ backgroundColor: `${accent}18`, border: `1px solid ${accent}30` }}
-                >
-                  <Icon className="w-6 h-6" style={{ color: accent }} />
-                </div>
-
-                <div>
-                  <span className="text-[9px] font-black uppercase tracking-widest" style={{ color: accent }}>
-                    {label}
-                  </span>
-                  <h3 className="text-base font-black text-theme-page mt-1 leading-snug">{headline}</h3>
-                  <p className="text-sm text-theme-muted mt-2 leading-relaxed">{desc}</p>
-                </div>
-
-                <div
-                  className="mt-auto flex items-center text-[11px] font-black uppercase tracking-widest gap-1 transition-gap group-hover:gap-2"
+              {/* Text side */}
+              <div className="relative">
+                {/* Big watermark number */}
+                <span
+                  className="absolute -top-10 -left-4 text-[120px] font-black leading-none select-none pointer-events-none opacity-[0.04]"
                   style={{ color: accent }}
                 >
-                  {cta} <ChevronRight className="w-3.5 h-3.5 transition-transform group-hover:translate-x-1" />
+                  {n}
+                </span>
+
+                <div className="relative">
+                  <span
+                    className="inline-block text-[10px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-4 border"
+                    style={{ color: accent, backgroundColor: `${accent}12`, borderColor: `${accent}25` }}
+                  >
+                    {label}
+                  </span>
+                  <h2 className="text-3xl md:text-4xl font-black text-theme-page leading-tight mb-5">
+                    {headline}
+                  </h2>
+                  <p className="text-base text-theme-muted leading-relaxed mb-8 max-w-md">
+                    {body}
+                  </p>
+                  <Link
+                    href={href}
+                    className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest group"
+                    style={{ color: accent }}
+                  >
+                    {cta}
+                    <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                  </Link>
                 </div>
-              </Link>
-            ))}
+              </div>
+
+              {/* Visual side */}
+              <div className={`flex items-center justify-center ${flip ? 'lg:justify-start' : 'lg:justify-end'}`}>
+                {visual}
+              </div>
+            </div>
           </div>
-        </div>
-      </section>
+        </section>
+      ))}
 
-      {/* ── Stores ────────────────────────────────────────────────── */}
-      <section className="py-20 px-4 bg-theme-section border-t border-theme-section">
-        <div className="max-w-4xl mx-auto text-center">
-          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.2em] mb-8">Store coverage</p>
+      {/* ══ CTA ════════════════════════════════════════════════ */}
+      <section className="relative py-32 px-6 overflow-hidden bg-hero">
+        {/* Blue glow from below */}
+        <div
+          className="absolute inset-0 pointer-events-none"
+          style={{ background: 'radial-gradient(ellipse 70% 60% at 50% 100%, rgba(0,112,255,0.15) 0%, transparent 70%)' }}
+        />
+        {/* PS symbol watermarks */}
+        <span aria-hidden className="absolute top-8 left-[10%] text-[200px] font-black leading-none select-none pointer-events-none dark:text-white/[0.015] text-black/[0.02]">○</span>
+        <span aria-hidden className="absolute bottom-8 right-[8%] text-[150px] font-black leading-none select-none pointer-events-none dark:text-white/[0.015] text-black/[0.02]">□</span>
 
-          <div className="flex flex-wrap justify-center gap-3 mb-6">
-            {STORES.map(s => (
-              <span
-                key={s}
-                className="px-4 py-2 rounded-xl border border-theme-card bg-theme-card text-sm font-bold text-theme-page"
-              >
-                {s}
-              </span>
-            ))}
-          </div>
-
-          <p className="text-[10px] font-black text-theme-faint uppercase tracking-widest mb-3">
-            Quick-commerce (check directly on their apps)
+        <div className="relative max-w-3xl mx-auto text-center">
+          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] mb-6">
+            The next restock is happening
           </p>
-          <div className="flex flex-wrap justify-center gap-3">
-            {QC_STORES.map(s => (
-              <span key={s} className="px-3 py-1.5 rounded-lg border border-theme-card bg-theme-card text-xs font-bold text-theme-muted">
-                {s}
-              </span>
-            ))}
-          </div>
-        </div>
-      </section>
-
-      {/* ── Final CTA ─────────────────────────────────────────────── */}
-      <section className="py-28 px-4 text-center relative overflow-hidden">
-        <div className="hero-glow absolute inset-0 pointer-events-none rotate-180" />
-        <div className="max-w-2xl mx-auto relative">
-          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.2em] mb-4">Ready?</p>
-          <h2 className="text-4xl md:text-6xl font-black uppercase tracking-tight text-theme-page leading-[0.9] mb-6">
-            Start tracking.<br />It&apos;s free.
+          <h2 className="text-5xl md:text-7xl font-black uppercase tracking-tight leading-[0.88] text-theme-page mb-6">
+            Is it in stock<br />
+            <span className="dark:text-gradient text-gradient-light">near you?</span>
           </h2>
-          <p className="text-theme-muted mb-10 text-base leading-relaxed">
-            Enter your pincode, subscribe once, and we handle the rest.
-            No app. No payment. Just alerts.
+          <p className="text-theme-muted text-lg mb-12 leading-relaxed">
+            Enter your pincode. We scan 6 retailers instantly.
+            Subscribe once and we alert you the moment it restocks — free, forever.
           </p>
           <Link
             href="/tracker"
-            className="ps-button ps-button-primary px-10 py-5 text-base w-auto inline-flex items-center gap-2"
+            className="ps-button ps-button-primary w-auto inline-flex items-center gap-2 px-10 py-5 text-base animate-glow-pulse"
           >
             <Search className="w-5 h-5" /> Open PS5 Scanner
           </Link>
+          <p className="text-theme-faint text-xs mt-5 uppercase tracking-widest font-bold">No app · No payment · Just alerts</p>
         </div>
       </section>
 
