@@ -140,7 +140,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
   };
 
   return (
-    <div className="w-full max-w-lg mx-auto bg-[#18181b]/40 backdrop-blur-md p-5 sm:p-8 rounded-3xl border border-white/10 shadow-2xl text-white">
+    <div className="w-full max-w-lg mx-auto bg-theme-form backdrop-blur-md p-5 sm:p-8 rounded-3xl border border-theme-form shadow-2xl text-theme-page">
       {step === 1 ? (
         <form onSubmit={handleCheckStock} className="space-y-6">
           <div className="space-y-2">
@@ -155,7 +155,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                 pattern="\d{6}"
                 maxLength={6}
                 placeholder="Enter Pincode"
-                className="w-full pl-12 pr-6 py-4 sm:py-5 bg-white/[0.04] border-2 border-white/[0.08] rounded-2xl focus:bg-white/[0.08] focus:border-zinc-700 outline-none transition-all font-bold text-white text-base sm:text-lg placeholder-zinc-500"
+                className="w-full pl-12 pr-6 py-4 sm:py-5 bg-theme-input border-2 border-theme-input rounded-2xl focus:outline-none transition-all font-bold text-theme-input text-base sm:text-lg placeholder-zinc-400 dark:placeholder-zinc-500"
                 onChange={(e) => {
                   const val = e.target.value;
                   setPincode(val);
@@ -182,9 +182,9 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
           </button>
 
           <div className="relative flex items-center my-1">
-            <div className="flex-grow border-t border-zinc-800"></div>
-            <span className="mx-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Quick-commerce (10-min delivery)</span>
-            <div className="flex-grow border-t border-zinc-800"></div>
+            <div className="flex-grow border-t border-theme-divider"></div>
+            <span className="mx-3 text-[10px] font-bold text-theme-faint uppercase tracking-widest">Quick-commerce (10-min delivery)</span>
+            <div className="flex-grow border-t border-theme-divider"></div>
           </div>
 
           <div className="grid grid-cols-3 gap-2">
@@ -226,8 +226,8 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
         </form>
       ) : (
         <div className="space-y-6 sm:space-y-8 animate-slide-up">
-          <div className="flex items-center justify-between border-b border-zinc-800 pb-4">
-            <h3 className="font-black text-sm sm:text-base uppercase tracking-tight text-white">
+          <div className="flex items-center justify-between border-b border-theme-divider pb-4">
+            <h3 className="font-black text-sm sm:text-base uppercase tracking-tight text-theme-page">
               Results for {pincode} {areaName ? `(${areaName})` : ''}
             </h3>
             <button 
@@ -240,9 +240,9 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
 
           <div className="space-y-3 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
             {checkResults.map((result) => (
-              <div key={result.platform} className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-white/[0.05] bg-white/[0.02]">
+              <div key={result.platform} className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-theme-item bg-theme-item">
                 <div className="flex flex-col">
-                  <span className="font-bold text-xs sm:text-sm text-white">{result.platform}</span>
+                  <span className="font-bold text-xs sm:text-sm text-theme-page">{result.platform}</span>
                   {result.note ? (
                     <span className="text-[8px] font-medium text-amber-400 uppercase tracking-tighter">
                       {result.note}
@@ -258,7 +258,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                     ? 'bg-green-500/10 text-green-400 border-green-500/20' 
                     : result.note 
                       ? 'bg-amber-500/10 text-amber-400 border-amber-500/20' 
-                      : 'bg-zinc-800 text-zinc-500 border-zinc-700/20'
+                      : 'dark:bg-zinc-800 dark:border-zinc-700/20 bg-zinc-100 border-zinc-200 text-zinc-500'
                 }`}>
                   {result.inStock ? 'Available' : result.note ? 'N/A' : 'No Stock'}
                 </span>
@@ -266,7 +266,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
             ))}
           </div>
 
-          <div className="pt-6 border-t border-zinc-800 text-center">
+          <div className="pt-6 border-t border-theme-divider text-center">
             {status === 'success' ? (
               <div className="space-y-4 animate-bounce-in">
                 {subStatus === 'pending_confirmation' ? (
@@ -279,7 +279,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                     {telegramLink && (
                       <div className="relative">
                         <div className="absolute inset-x-0 -top-2 flex justify-center">
-                          <span className="bg-[#18181b] text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-3">Or — instant alerts</span>
+                          <span className="bg-[var(--form-bg-solid)] text-[10px] font-bold text-zinc-400 uppercase tracking-widest px-3">Or — instant alerts</span>
                         </div>
                         <a
                           href={telegramLink}
@@ -311,7 +311,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
               </div>
             ) : (
               <div className="space-y-5">
-                <p className="font-black text-xs sm:text-sm uppercase tracking-tight text-center text-white">
+                <p className="font-black text-xs sm:text-sm uppercase tracking-tight text-center text-theme-page">
                   Get stock alerts for {pincode} {areaName ? `(${areaName})` : ''}
                 </p>
 
@@ -326,9 +326,9 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                 <p className="text-[10px] text-zinc-400 text-center -mt-2">One tap — no email required. Instant push.</p>
 
                 <div className="relative flex items-center my-3">
-                  <div className="flex-grow border-t border-zinc-800"></div>
-                  <span className="mx-3 text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Or via email</span>
-                  <div className="flex-grow border-t border-zinc-800"></div>
+                  <div className="flex-grow border-t border-theme-divider"></div>
+                  <span className="mx-3 text-[10px] font-bold text-theme-faint uppercase tracking-widest">Or via email</span>
+                  <div className="flex-grow border-t border-theme-divider"></div>
                 </div>
 
                 <form onSubmit={handleSubscribe} className="space-y-3">
@@ -338,7 +338,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                       type="email"
                       required
                       placeholder="Enter your email"
-                      className="w-full pl-12 pr-6 py-4 bg-white/[0.04] border-2 border-white/[0.08] rounded-2xl focus:bg-white/[0.08] focus:border-ps-neon-blue outline-none transition-all font-bold text-white text-sm sm:text-base placeholder-zinc-500"
+                      className="w-full pl-12 pr-6 py-4 bg-theme-input border-2 border-theme-input rounded-2xl focus:outline-none transition-all font-bold text-theme-input text-sm sm:text-base placeholder-zinc-400 dark:placeholder-zinc-500"
                       value={email}
                       onChange={(e) => setEmail(e.target.value)}
                       disabled={status === 'loading'}
