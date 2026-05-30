@@ -100,6 +100,39 @@
 .ticker-fader-left  { background: linear-gradient(to right, var(--ticker-fader), transparent); }
 .ticker-fader-right { background: linear-gradient(to left,  var(--ticker-fader), transparent); }
 
+/* ── System dark preference — applied before JS hydrates ─────── */
+/* Prevents white flash for dark-mode users on initial load      */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg-page: #050508;
+    --bg-hero: #050508;
+    --bg-hero-alt: #07080f;
+    --bg-stats: #07080f;
+    --text-page: #ffffff;
+    --nav-bg: rgba(9, 9, 11, 0.75);
+    --nav-border: rgba(255, 255, 255, 0.05);
+    --section-bg: rgba(0, 0, 0, 0.25);
+    --section-border: rgba(255, 255, 255, 0.03);
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --ticker-bg: rgba(9, 9, 11, 0.8);
+    --ticker-fader: #09090b;
+    --text-muted: #a1a1aa;
+    --text-faint: #71717a;
+    --form-bg: rgba(24, 24, 27, 0.4);
+    --form-bg-solid: #18181b;
+    --form-border: rgba(255, 255, 255, 0.1);
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --input-text: #ffffff;
+    --divider: rgba(255, 255, 255, 0.08);
+    --item-bg: rgba(255, 255, 255, 0.02);
+    --item-border: rgba(255, 255, 255, 0.05);
+    --text-stat: #ffffff;
+  }
+}
+
 /* ── Base ────────────────────────────────────────────────────── */
 @layer base {
   body {
