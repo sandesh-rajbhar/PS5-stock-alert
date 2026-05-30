@@ -284,7 +284,7 @@ export default function LandingPage() {
                 { sym: '△', t: '₹0 Cost Forever'  },
               ].map(({ sym, t }) => (
                 <span key={t} className="flex items-center gap-2">
-                  <span className="text-ps-neon-blue font-black text-base leading-none">{sym}</span>
+                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-ps-neon-blue font-black text-[11px] leading-none shrink-0">{sym}</span>
                   {t}
                 </span>
               ))}
