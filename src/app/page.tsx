@@ -279,12 +279,23 @@ export default function LandingPage() {
             {/* Social proof — PS symbols, no generic icons */}
             <div className="flex flex-wrap gap-6 text-[10px] font-black uppercase tracking-widest text-theme-faint">
               {[
-                { sym: '○', t: '6 Stores Tracked' },
-                { sym: '□', t: 'Sub-1s Alerts'    },
-                { sym: '△', t: '₹0 Cost Forever'  },
-              ].map(({ sym, t }) => (
+                {
+                  svg: <circle cx="7" cy="7" r="5.5" fill="none" stroke="currentColor" strokeWidth="1.8"/>,
+                  t: '6 Stores Tracked',
+                },
+                {
+                  svg: <rect x="1.5" y="1.5" width="11" height="11" fill="none" stroke="currentColor" strokeWidth="1.8"/>,
+                  t: 'Sub-1s Alerts',
+                },
+                {
+                  svg: <polygon points="7,1.5 13,12.5 1,12.5" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinejoin="round"/>,
+                  t: '₹0 Cost Forever',
+                },
+              ].map(({ svg, t }) => (
                 <span key={t} className="flex items-center gap-2">
-                  <span className="inline-flex items-center justify-center w-3.5 h-3.5 text-ps-neon-blue font-black text-[11px] leading-none shrink-0">{sym}</span>
+                  <svg width="14" height="14" viewBox="0 0 14 14" className="text-ps-neon-blue shrink-0" aria-hidden>
+                    {svg}
+                  </svg>
                   {t}
                 </span>
               ))}
