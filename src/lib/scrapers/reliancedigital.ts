@@ -43,7 +43,7 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
     // Step 1: Initialize session with pincode
     const pincodeResponse = await fetchWithTimeout(`https://www.reliancedigital.in/rcom/pincode/check?pincode=${pincode}`, { headers });
     const rawCookies = pincodeResponse.headers.raw()['set-cookie'] || [];
-    const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    const sessionCookies = rawCookies.map((c: string) => c.split(';')[0]).join('; ');
     const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
 
     let bestMatch: any = null;
