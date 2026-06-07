@@ -22,7 +22,7 @@ export default function ThemeToggle() {
     <div
       role="group"
       aria-label="Color theme"
-      className="flex items-center p-0.5 rounded-xl bg-zinc-100 dark:bg-zinc-800/60 border border-zinc-200 dark:border-zinc-700/40"
+      className="flex items-center p-0.5 rounded-xl bg-zinc-200/70 dark:bg-zinc-800/60 border border-zinc-300/60 dark:border-zinc-700/40"
     >
       {OPTIONS.map(({ value, Icon, label }) => {
         const active = theme === value;
@@ -32,10 +32,10 @@ export default function ThemeToggle() {
             onClick={() => setTheme(value)}
             title={`${label} theme`}
             aria-pressed={active}
-            className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-[9px] text-[10px] font-bold uppercase tracking-widest transition-all duration-150 cursor-pointer select-none
+            className={`flex items-center px-2.5 py-1.5 rounded-[9px] transition-all duration-150 cursor-pointer select-none
               ${active
-                ? 'bg-white dark:bg-zinc-700 text-zinc-900 dark:text-white shadow-sm'
-                : 'text-zinc-400 dark:text-zinc-500 hover:text-zinc-700 dark:hover:text-zinc-300'
+                ? 'bg-ps-neon-blue text-white shadow-sm'
+                : 'text-zinc-500 dark:text-zinc-400 hover:text-zinc-800 dark:hover:text-zinc-200'
               }`}
           >
             <Icon className="w-3.5 h-3.5 shrink-0" />

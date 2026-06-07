@@ -1,6 +1,5 @@
 import Link from 'next/link';
 import Footer from '@/components/Footer';
-import MockGamePrice from '@/components/MockGamePrice';
 import { MapPin, Bell, ArrowRight, Check, X } from 'lucide-react';
 
 /* ─── Mock product-demo components (static, no JS) ──────────── */
@@ -163,13 +162,6 @@ function StoresMarquee() {
   );
 }
 
-/* ─── Stats ──────────────────────────────────────────────────── */
-const STATS = [
-  { value: '06',  label: 'Retailers tracked'   },
-  { value: '<1s', label: 'Alert delay'         },
-  { value: '₹0',  label: 'Cost forever'        },
-  { value: '5+',  label: 'PS5 models'          },
-];
 
 /* ─── Features ───────────────────────────────────────────────── */
 const FEATURES = [
@@ -318,26 +310,6 @@ export default function LandingPage() {
       {/* ══ MARQUEE ════════════════════════════════════════════ */}
       <StoresMarquee />
 
-      {/* ══ STATS ══════════════════════════════════════════════ */}
-      <section className="bg-stats py-14 md:py-20 px-4 sm:px-6">
-        <div className="max-w-5xl mx-auto">
-          <p className="text-[10px] font-black text-ps-neon-blue uppercase tracking-[0.25em] text-center mb-8 md:mb-14">
-            By the numbers
-          </p>
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-3 sm:gap-4">
-            {STATS.map(({ value, label }) => (
-              <div key={value} className="ps-card flex flex-col items-center justify-center text-center py-8 px-4">
-                <span className="text-4xl sm:text-5xl md:text-6xl font-black text-ps-neon-blue leading-none mb-2">
-                  {value}
-                </span>
-                <span className="text-[9px] sm:text-[10px] font-black text-theme-faint uppercase tracking-widest">
-                  {label}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </section>
 
       {/* ══ FEATURES ═══════════════════════════════════════════ */}
       {FEATURES.map(({ n, accent, label, headline, body, cta, href, visual, flip }, idx) => (
@@ -391,40 +363,51 @@ export default function LandingPage() {
         </section>
       ))}
 
-      {/* ══ GAME DEALS TEASER ══════════════════════════════════ */}
+      {/* ══ GAMES BETA HIGHLIGHT ═══════════════════════════════ */}
       <section className="py-24 px-6 md:px-12 lg:px-20 bg-hero-alt">
         <div className="max-w-6xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-10 lg:gap-24 items-center">
             {/* Text */}
             <div className="relative">
-              <span className="absolute -top-10 -left-4 text-[120px] font-black leading-none select-none pointer-events-none opacity-[0.04] text-amber-500">
-                04
-              </span>
+              <span aria-hidden className="absolute -top-10 -left-4 text-[120px] font-black leading-none select-none pointer-events-none opacity-[0.04] text-amber-500">04</span>
               <div className="relative">
-                <span className="inline-block text-[10px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full mb-4 border text-amber-500 bg-amber-500/10 border-amber-500/25">
-                  Coming Next
-                </span>
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="text-[9px] font-black uppercase tracking-[0.2em] px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/25">
+                    Beta — Live Now
+                  </span>
+                </div>
                 <h2 className="text-3xl md:text-4xl font-black text-theme-page leading-tight mb-5">
-                  Game price comparison.<br />Historical lows. Deal alerts.
+                  Browse 60+ PS5 games.<br />Compare prices. Find deals.
                 </h2>
                 <p className="text-base text-theme-muted leading-relaxed mb-8 max-w-md">
-                  We&apos;re building cross-platform game price tracking for PS5 titles across Amazon, Flipkart, and PlayStation Store. Historical low badges, wishlist price alerts, and a deal hub — free.
+                  Search by name or genre. Direct links to Amazon &amp; Flipkart listings. Live price tracking and historical lows coming in the next update.
                 </p>
-                <div className="flex flex-wrap gap-2 mb-8">
-                  {['Spider-Man 2', 'God of War', 'FC 26', 'Elden Ring', 'Hogwarts Legacy', 'NBA 2K25'].map(g => (
-                    <span key={g} className="text-[10px] font-bold px-2.5 py-1 rounded-md border border-theme-divider text-theme-muted bg-theme-card">
-                      {g}
-                    </span>
-                  ))}
-                </div>
-                <p className="text-xs font-bold text-theme-faint">
-                  Subscribe on the <Link href="/tracker" className="text-ps-neon-blue underline underline-offset-2">PS5 Scanner</Link> page to get notified when this launches.
-                </p>
+                <Link
+                  href="/games"
+                  className="inline-flex items-center gap-2 text-sm font-black uppercase tracking-widest text-amber-500 group"
+                >
+                  Browse PS5 Games <ArrowRight className="w-4 h-4 transition-transform group-hover:translate-x-1" />
+                </Link>
               </div>
             </div>
-            {/* Visual */}
-            <div className="flex justify-center lg:justify-end">
-              <MockGamePrice />
+            {/* Mini game cards preview */}
+            <div className="grid grid-cols-2 gap-3">
+              {[
+                { title: "Marvel's Spider-Man 2", genre: 'Action', gradient: 'from-red-900 via-blue-900 to-slate-950', exclusive: true  },
+                { title: 'Elden Ring',             genre: 'RPG',    gradient: 'from-yellow-950 via-amber-900 to-stone-950', exclusive: false },
+                { title: 'God of War: Ragnarök',   genre: 'Action', gradient: 'from-teal-900 via-slate-900 to-zinc-950', exclusive: false },
+                { title: 'Hogwarts Legacy',        genre: 'RPG',    gradient: 'from-purple-900 via-indigo-900 to-slate-950', exclusive: false },
+              ].map(g => (
+                <div key={g.title} className={`ps-card overflow-hidden bg-gradient-to-br ${g.gradient} h-28 flex flex-col justify-between p-3`}>
+                  {g.exclusive && (
+                    <span className="self-start text-[8px] font-black uppercase tracking-widest bg-ps-neon-blue text-white px-1.5 py-0.5 rounded-full">PS5 Only</span>
+                  )}
+                  <div>
+                    <p className="text-[8px] text-white/50 font-black uppercase tracking-widest">{g.genre}</p>
+                    <p className="text-xs font-black text-white leading-tight line-clamp-2">{g.title}</p>
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
         </div>
