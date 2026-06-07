@@ -32,7 +32,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
     });
     
     const rawCookies = pincodeResponse.headers.raw()['set-cookie'] || [];
-    const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    const sessionCookies = rawCookies.map((c: string) => c.split(';')[0]).join('; ');
     const combinedCookies = `${sessionCookies}; pincode=${pincode}; vspincode=${pincode}`;
 
     let bestMatch: any = null;

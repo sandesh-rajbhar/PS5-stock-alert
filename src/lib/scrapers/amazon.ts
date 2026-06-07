@@ -38,7 +38,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
 
     // Correctly handle multiple set-cookie headers
     const rawCookies = addressResponse.headers.raw()['set-cookie'] || [];
-    const cookies = rawCookies.map(c => c.split(';')[0]).join('; ');
+    const cookies = rawCookies.map((c: string) => c.split(';')[0]).join('; ');
 
     let bestMatch: any = null;
     let matchCount = productUrls.length;
