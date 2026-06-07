@@ -31,9 +31,13 @@ export default function GamesPage() {
             <br />
             <span className="dark:text-gradient text-gradient-light">PS5 Game Deals.</span>
           </h1>
-          <p className="text-theme-muted text-base leading-relaxed max-w-xl mx-auto">
-            Browse 60+ PS5 titles. Search by name or genre. Live price comparison across Amazon &amp; Flipkart coming soon.
+          <p className="text-theme-muted text-base leading-relaxed max-w-xl mx-auto mb-5">
+            Browse PS5 titles. Search by name or genre. Live price comparison across Amazon &amp; Flipkart coming soon.
           </p>
+          <div className="inline-flex items-center gap-2 px-3 py-2 rounded-xl bg-amber-500/8 border border-amber-500/20 text-[11px] text-amber-400/80 font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 shrink-0" />
+            Beta — limited catalog. More games &amp; price tracking coming in the next update.
+          </div>
         </div>
       </section>
 
