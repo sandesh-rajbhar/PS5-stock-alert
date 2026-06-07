@@ -1,8 +1,7 @@
 import * as cheerio from 'cheerio';
-import fetch from 'node-fetch';
-import { HttpsProxyAgent } from 'https-proxy-agent';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 interface ScrapeOpts {
   maxUrls?: number;
@@ -17,27 +16,6 @@ const USER_AGENTS = [
   'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36 Edge/120.0.0.0'
 ];
 
-// Global proxy cache to avoid hitting the proxy API on every request (Vercel warm lambda optimization)
-let cachedProxies: string[] = [];
-let lastProxyFetch = 0;
-
-async function getPublicProxies(): Promise<string[]> {
-  const now = Date.now();
-  // Cache proxies for 10 minutes
-  if (cachedProxies.length > 0 && (now - lastProxyFetch) < 10 * 60 * 1000) {
-    return cachedProxies;
-  }
-
-  try {
-    const res = await fetch('https://proxylist.geonode.com/api/proxy-list?limit=30&page=1&sort_by=lastChecked&sort_type=desc&protocols=https');
-    const data = await res.json() as any;
-    cachedProxies = data.data.map((p: any) => `https://${p.ip}:${p.port}`);
-    lastProxyFetch = now;
-    return cachedProxies;
-  } catch (e) {
-    return cachedProxies; // Fallback to old cache if fetch fails
-  }
-}
 
 export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
   const allProductUrls = [
@@ -65,7 +43,6 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
   ];
 
   const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
-  const publicProxies = await getPublicProxies();
 
   try {
     const userAgent = USER_AGENTS[Math.floor(Math.random() * USER_AGENTS.length)];
@@ -83,37 +60,10 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
       'X-Requested-With': 'com.android.chrome',
     };
 
-    // Helper to perform fetch with optional proxy rotation and proper v3 timeout
-    const fetchWithRetry = async (url: string, headers: any, useProxy: boolean = false): Promise<any> => {
-      let agent = undefined;
-      if (useProxy && publicProxies.length > 0) {
-        const proxyUrl = publicProxies[Math.floor(Math.random() * publicProxies.length)];
-        agent = new HttpsProxyAgent(proxyUrl);
-      }
-
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), useProxy ? 10000 : 7000);
-
+    const fetchWithRetry = async (url: string, headers: any): Promise<any> => {
       try {
-        const response = await Promise.race([
-          fetch(url, { headers, agent, signal: controller.signal as any }),
-          new Promise<never>((_, reject) => {
-            if (agent) {
-              (agent as any).once?.('error', reject);
-            }
-          }),
-        ]);
-        clearTimeout(timeoutId);
-
-        if (response.status === 403 && !useProxy && publicProxies.length > 0) {
-          return fetchWithRetry(url, headers, true);
-        }
-        return response;
-      } catch (e) {
-        clearTimeout(timeoutId);
-        if (!useProxy && publicProxies.length > 0) {
-          return fetchWithRetry(url, headers, true);
-        }
+        return await fetchWithTimeout(url, { headers }, 10000);
+      } catch {
         return null;
       }
     };

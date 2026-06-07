@@ -1,34 +1,54 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import Link from 'next/link';
-import { Search, ArrowRight, ExternalLink } from 'lucide-react';
+import { useRouter } from 'next/navigation';
+import { Search, ArrowRight } from 'lucide-react';
 import { GAMES, GENRES, type Genre, type Game } from '@/data/games';
 
+
 function GameCard({ game, large = false }: { game: Game; large?: boolean }) {
-  const [imgError, setImgError] = useState(false);
+  const router = useRouter();
+  const [imgSrc, setImgSrc] = useState(game.coverUrl);
+  const [imgFailed, setImgFailed] = useState(false);
   const amazonUrl   = `https://www.amazon.in/s?k=${encodeURIComponent(game.title + ' PS5')}`;
   const flipkartUrl = `https://www.flipkart.com/search?q=${encodeURIComponent(game.title + ' PS5')}`;
-  const showImg     = !!game.coverUrl && !imgError;
+  const showImg     = !!imgSrc && !imgFailed;
+
+  const handleImgError = () => {
+    if (imgSrc?.includes('library_600x900.jpg')) {
+      setImgSrc(imgSrc.replace('library_600x900.jpg', 'header.jpg'));
+    } else if (imgSrc?.includes('header.jpg')) {
+      setImgSrc(imgSrc.replace('header.jpg', 'library_hero.jpg'));
+    } else {
+      setImgFailed(true);
+    }
+  };
 
   return (
-    <Link href={`/games/${game.slug}`} className="ps-card overflow-hidden flex flex-col group cursor-pointer">
+    <div
+      className="ps-card overflow-hidden flex flex-col group cursor-pointer transition-transform duration-200 hover:scale-[1.02] hover:shadow-lg"
+      onClick={() => router.push(`/games/${game.slug}`)}
+    >
       {/* Cover */}
       <div className={`relative ${large ? 'h-48 sm:h-56' : 'h-36 sm:h-40'} overflow-hidden`}>
-        {/* Gradient always present as base */}
         <div className={`absolute inset-0 bg-gradient-to-br ${game.gradient}`} />
-        {/* Cover image on top */}
-        {game.coverUrl && (
+        {imgSrc && (
           <img
-            src={game.coverUrl}
+            src={imgSrc}
             alt={game.title}
             className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${showImg ? 'opacity-100' : 'opacity-0'}`}
-            onError={() => setImgError(true)}
+            onError={handleImgError}
             loading="lazy"
           />
         )}
-        {/* Dark overlay for text readability */}
         <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+
+        {/* Hover overlay hint */}
+        <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors duration-200 flex items-center justify-center">
+          <span className="opacity-0 group-hover:opacity-100 transition-opacity duration-200 text-[10px] font-black uppercase tracking-widest text-white bg-black/50 backdrop-blur-sm px-3 py-1.5 rounded-full">
+            View Details
+          </span>
+        </div>
 
         {/* Badges */}
         <div className="absolute top-3 left-3 flex items-center gap-1.5 flex-wrap">
@@ -54,25 +74,32 @@ function GameCard({ game, large = false }: { game: Game; large?: boolean }) {
       </div>
 
       {/* Actions */}
-      <div className="p-3 flex items-center gap-2 mt-auto" onClick={e => e.preventDefault()}>
-        <a
-          href={amazonUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-theme-card border border-theme-card text-theme-muted hover:text-theme-page hover:border-theme-nav transition-colors"
+      <div className="px-3 py-2.5 flex items-center gap-2 mt-auto">
+        {/* Amazon icon button */}
+        <button
+          onClick={e => { e.stopPropagation(); window.open(amazonUrl, '_blank', 'noopener,noreferrer'); }}
+          title="Search on Amazon"
+          className="w-8 h-8 rounded-lg bg-[#FF9900]/10 hover:bg-[#FF9900]/25 border border-[#FF9900]/20 hover:border-[#FF9900]/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
         >
-          Amazon
-        </a>
-        <a
-          href={flipkartUrl}
-          target="_blank"
-          rel="noopener noreferrer"
-          className="flex-1 text-center text-[10px] font-black uppercase tracking-widest py-2 rounded-lg bg-theme-card border border-theme-card text-theme-muted hover:text-theme-page hover:border-theme-nav transition-colors"
+          <img src="/amazon.png" alt="Amazon" className="w-4 h-4 object-contain" />
+        </button>
+        {/* Flipkart icon button */}
+        <button
+          onClick={e => { e.stopPropagation(); window.open(flipkartUrl, '_blank', 'noopener,noreferrer'); }}
+          title="Search on Flipkart"
+          className="w-8 h-8 rounded-lg bg-[#2874F0]/10 hover:bg-[#2874F0]/25 border border-[#2874F0]/20 hover:border-[#2874F0]/40 flex items-center justify-center transition-colors cursor-pointer shrink-0"
         >
-          Flipkart
-        </a>
+          <img src="/flipkart.png" alt="Flipkart" className="w-4 h-4 object-contain" />
+        </button>
+        {/* View details CTA */}
+        <button
+          onClick={e => { e.stopPropagation(); router.push(`/games/${game.slug}`); }}
+          className="flex-1 flex items-center justify-center gap-1 text-[10px] font-black uppercase tracking-widest h-8 rounded-lg bg-theme-card border border-theme-divider text-theme-muted hover:text-ps-neon-blue hover:border-ps-neon-blue/30 transition-colors cursor-pointer"
+        >
+          See All <ArrowRight className="w-3 h-3" />
+        </button>
       </div>
-    </Link>
+    </div>
   );
 }
 

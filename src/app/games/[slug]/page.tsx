@@ -8,8 +8,9 @@ export function generateStaticParams() {
   return GAMES.map(g => ({ slug: g.slug }));
 }
 
-export function generateMetadata({ params }: { params: { slug: string } }) {
-  const game = GAMES.find(g => g.slug === params.slug);
+export async function generateMetadata({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const game = GAMES.find(g => g.slug === slug);
   if (!game) return {};
   return {
     title: `${game.title} PS5 Price India | PS Deals`,
@@ -25,8 +26,9 @@ const STORES = [
   { name: 'PlayStation Store', color: '#003087', getUrl: (t: string) => `https://store.playstation.com/en-in/search/${encodeURIComponent(t)}` },
 ];
 
-export default function GamePage({ params }: { params: { slug: string } }) {
-  const game = GAMES.find(g => g.slug === params.slug);
+export default async function GamePage({ params }: { params: Promise<{ slug: string }> }) {
+  const { slug } = await params;
+  const game = GAMES.find(g => g.slug === slug);
   if (!game) notFound();
 
   return (
@@ -124,12 +126,12 @@ export default function GamePage({ params }: { params: { slug: string } }) {
           >
             <ShoppingCart className="w-4 h-4" /> Buy on Amazon
           </a>
-          <Link
-            href="/tracker#subscribe"
-            className="ps-button w-full sm:w-auto inline-flex px-8 py-4 text-sm bg-theme-card border border-theme-card text-theme-page hover:border-theme-nav transition-colors"
+          <button
+            disabled
+            className="ps-button w-full sm:w-auto inline-flex px-8 py-4 text-sm bg-theme-card border border-theme-divider text-theme-faint opacity-50 cursor-not-allowed"
           >
             Get Price Drop Alert
-          </Link>
+          </button>
         </div>
       </section>
 

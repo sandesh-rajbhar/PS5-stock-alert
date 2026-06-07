@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
-import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
   const productUrls = [
@@ -23,7 +23,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     };
 
     // Step 1: Set the Pincode via Amazon's internal address-change endpoint
-    const addressResponse = await fetch(addressUrl, {
+    const addressResponse = await fetchWithTimeout(addressUrl, {
       method: 'POST',
       headers,
       body: new URLSearchParams({
@@ -49,7 +49,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
         // Small staggered delay
         await new Promise(r => setTimeout(r, index * 200));
 
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
           headers: {
             ...headers,
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',

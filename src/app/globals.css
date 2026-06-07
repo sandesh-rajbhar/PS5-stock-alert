@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-ps-blue: #00439c;
@@ -196,6 +197,9 @@
     letter-spacing: 0.05em;
   }
 }
+
+.logo-icon { filter: brightness(0); }
+.dark .logo-icon { filter: invert(1); }
 
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
