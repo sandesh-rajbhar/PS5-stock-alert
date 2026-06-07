@@ -1,6 +1,7 @@
 import Link from 'next/link';
 import Footer from '@/components/Footer';
 import { MapPin, Bell, ArrowRight, Check, X } from 'lucide-react';
+import { GAMES } from '@/data/games';
 
 /* ─── Mock product-demo components (static, no JS) ──────────── */
 
@@ -392,22 +393,29 @@ export default function LandingPage() {
             </div>
             {/* Mini game cards preview */}
             <div className="grid grid-cols-2 gap-3">
-              {[
-                { title: "Marvel's Spider-Man 2", genre: 'Action', gradient: 'from-red-900 via-blue-900 to-slate-950', exclusive: true  },
-                { title: 'Elden Ring',             genre: 'RPG',    gradient: 'from-yellow-950 via-amber-900 to-stone-950', exclusive: false },
-                { title: 'God of War: Ragnarök',   genre: 'Action', gradient: 'from-teal-900 via-slate-900 to-zinc-950', exclusive: false },
-                { title: 'Hogwarts Legacy',        genre: 'RPG',    gradient: 'from-purple-900 via-indigo-900 to-slate-950', exclusive: false },
-              ].map(g => (
-                <div key={g.title} className={`ps-card overflow-hidden bg-gradient-to-br ${g.gradient} h-28 flex flex-col justify-between p-3`}>
-                  {g.exclusive && (
-                    <span className="self-start text-[8px] font-black uppercase tracking-widest bg-ps-neon-blue text-white px-1.5 py-0.5 rounded-full">PS5 Only</span>
-                  )}
-                  <div>
-                    <p className="text-[8px] text-white/50 font-black uppercase tracking-widest">{g.genre}</p>
-                    <p className="text-xs font-black text-white leading-tight line-clamp-2">{g.title}</p>
+              {['marvels-spider-man-2', 'elden-ring', 'god-of-war-ragnarok', 'hogwarts-legacy']
+                .map(slug => GAMES.find(g => g.slug === slug))
+                .filter(Boolean)
+                .map(g => (
+                  <div key={g!.slug} className={`ps-card overflow-hidden relative bg-gradient-to-br ${g!.gradient} h-28`}>
+                    {g!.coverUrl && (
+                      // eslint-disable-next-line @next/next/no-img-element
+                      <img src={g!.coverUrl} alt={g!.title} className="absolute inset-0 w-full h-full object-cover" />
+                    )}
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent" />
+                    <div className="absolute inset-0 flex flex-col justify-between p-3">
+                      <div>
+                        {g!.exclusive && (
+                          <span className="self-start text-[8px] font-black uppercase tracking-widest bg-ps-neon-blue text-white px-1.5 py-0.5 rounded-full">PS5 Only</span>
+                        )}
+                      </div>
+                      <div>
+                        <p className="text-[8px] text-white/50 font-black uppercase tracking-widest">{g!.genre[0]}</p>
+                        <p className="text-xs font-black text-white leading-tight line-clamp-2">{g!.title}</p>
+                      </div>
+                    </div>
                   </div>
-                </div>
-              ))}
+                ))}
             </div>
           </div>
         </div>
