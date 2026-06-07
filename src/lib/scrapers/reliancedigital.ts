@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
-import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 interface ScrapeOpts {
   maxUrls?: number;
@@ -41,7 +41,7 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
     };
 
     // Step 1: Initialize session with pincode
-    const pincodeResponse = await fetch(`https://www.reliancedigital.in/rcom/pincode/check?pincode=${pincode}`, { headers });
+    const pincodeResponse = await fetchWithTimeout(`https://www.reliancedigital.in/rcom/pincode/check?pincode=${pincode}`, { headers });
     const rawCookies = pincodeResponse.headers.raw()['set-cookie'] || [];
     const sessionCookies = rawCookies.map(c => c.split(';')[0]).join('; ');
     const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
@@ -53,7 +53,7 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
       try {
         await new Promise(r => setTimeout(r, index * 200));
 
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
           headers: {
             ...headers,
             'Cookie': combinedCookies,
@@ -80,25 +80,19 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
                         bodyText.includes('BUY NOW') ||
                         bodyText.includes('Buy Now');
 
-        // Reliance uses Schema.org JSON-LD.
-        // NOTE: We ignore the generic toast message string "Article Currently Unavailable" which is always present in the HTML config.
-        const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
-        const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
+        // Schema.org stock signals — require quoted URL to avoid matching class names / JS vars
+        const isInStockSchema  = bodyText.includes('"http://schema.org/InStock"')  || bodyText.includes('"https://schema.org/InStock"');
+        const isOutOfStockSchema = bodyText.includes('"http://schema.org/OutOfStock"') || bodyText.includes('"https://schema.org/OutOfStock"');
 
-        // Real OOS indicators on Reliance usually appear in specific divs or larger text blocks
-        // We look for the text but EXCLUDE the generic toast message property
         const bodyWithoutConfig = bodyText.replace('"restricted_articles_toast_message":"Article Currently Unavailable"', '');
-        const currentlyUnavailable = bodyWithoutConfig.toLowerCase().includes('currently unavailable') && !addToCart && !buyNow;       
+        const currentlyUnavailable = bodyWithoutConfig.toLowerCase().includes('currently unavailable') && !addToCart && !buyNow;
 
         let isOutOfStock = false;
 
-        if (currentlyUnavailable) {
+        if (currentlyUnavailable || isOutOfStockSchema) {
           isOutOfStock = true;
-        } else if (isOutOfStockSchema) {
-          isOutOfStock = true;
-        } else if (isInStockSchema) {
-          isOutOfStock = false;
-        } else if (addToCart || buyNow) {
+        } else if ((addToCart || buyNow) && isInStockSchema) {
+          // Require BOTH a buy button AND schema confirmation to call it in-stock
           isOutOfStock = false;
         } else {
           isOutOfStock = true;

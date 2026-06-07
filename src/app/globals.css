@@ -1,4 +1,5 @@
 @import "tailwindcss";
+@custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
   --color-ps-blue: #00439c;
@@ -7,6 +8,24 @@
   --color-ps-white: #ffffff;
   --color-ps-gray: #18181b;
 }
+
+/* ── Extended theme vars ─────────────────────────────────────── */
+:root {
+  --bg-hero: #f8f9ff;
+  --bg-hero-alt: #f0f4ff;
+  --bg-stats: #e8f0ff;
+  --text-stat: #003087;
+}
+.dark {
+  --bg-hero: #050508;
+  --bg-hero-alt: #07080f;
+  --bg-stats: #07080f;
+  --text-stat: #ffffff;
+}
+.bg-hero        { background-color: var(--bg-hero); }
+.bg-hero-alt    { background-color: var(--bg-hero-alt); }
+.bg-stats       { background-color: var(--bg-stats); }
+.text-stat      { color: var(--text-stat); }
 
 /* ── Theme CSS variables ─────────────────────────────────────── */
 :root {
@@ -82,6 +101,39 @@
 .ticker-fader-left  { background: linear-gradient(to right, var(--ticker-fader), transparent); }
 .ticker-fader-right { background: linear-gradient(to left,  var(--ticker-fader), transparent); }
 
+/* ── System dark preference — applied before JS hydrates ─────── */
+/* Prevents white flash for dark-mode users on initial load      */
+@media (prefers-color-scheme: dark) {
+  :root:not(.light) {
+    --bg-page: #050508;
+    --bg-hero: #050508;
+    --bg-hero-alt: #07080f;
+    --bg-stats: #07080f;
+    --text-page: #ffffff;
+    --nav-bg: rgba(9, 9, 11, 0.75);
+    --nav-border: rgba(255, 255, 255, 0.05);
+    --section-bg: rgba(0, 0, 0, 0.25);
+    --section-border: rgba(255, 255, 255, 0.03);
+    --card-bg: rgba(255, 255, 255, 0.03);
+    --card-border: rgba(255, 255, 255, 0.08);
+    --card-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+    --ticker-bg: rgba(9, 9, 11, 0.8);
+    --ticker-fader: #09090b;
+    --text-muted: #a1a1aa;
+    --text-faint: #71717a;
+    --form-bg: rgba(24, 24, 27, 0.4);
+    --form-bg-solid: #18181b;
+    --form-border: rgba(255, 255, 255, 0.1);
+    --input-bg: rgba(255, 255, 255, 0.04);
+    --input-border: rgba(255, 255, 255, 0.08);
+    --input-text: #ffffff;
+    --divider: rgba(255, 255, 255, 0.08);
+    --item-bg: rgba(255, 255, 255, 0.02);
+    --item-border: rgba(255, 255, 255, 0.05);
+    --text-stat: #ffffff;
+  }
+}
+
 /* ── Base ────────────────────────────────────────────────────── */
 @layer base {
   body {
@@ -146,6 +198,9 @@
   }
 }
 
+.logo-icon { filter: brightness(0); }
+.dark .logo-icon { filter: invert(1); }
+
 @keyframes slideUp {
   from { transform: translateY(20px); opacity: 0; }
   to { transform: translateY(0); opacity: 1; }
@@ -157,4 +212,53 @@
 
 .custom-scrollbar::-webkit-scrollbar {
   display: none;
+}
+
+@keyframes glow-pulse {
+  0%, 100% { box-shadow: 0 0 20px rgba(0, 112, 255, 0.3); }
+  50%       { box-shadow: 0 0 40px rgba(0, 112, 255, 0.6); }
+}
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+@keyframes shimmer {
+  0%   { background-position: -200% center; }
+  100% { background-position:  200% center; }
+}
+.animate-glow-pulse { animation: glow-pulse 3s ease-in-out infinite; }
+.animate-float      { animation: float 4s ease-in-out infinite; }
+
+@keyframes marquee-left {
+  0%   { transform: translateX(0); }
+  100% { transform: translateX(-50%); }
+}
+.marquee-stores {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 28s linear infinite;
+}
+.marquee-stores-reverse {
+  display: flex;
+  width: max-content;
+  animation: marquee-left 28s linear infinite reverse;
+}
+
+.text-gradient {
+  background: linear-gradient(135deg, #ffffff 0%, #a0c4ff 50%, #0070ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.text-gradient-light {
+  background: linear-gradient(135deg, #09090b 0%, #003087 50%, #0070ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.hero-glow {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0, 112, 255, 0.2) 0%, transparent 70%);
+}
+.dark .hero-glow {
+  background: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(0, 112, 255, 0.25) 0%, transparent 70%);
 }

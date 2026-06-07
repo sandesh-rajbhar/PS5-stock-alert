@@ -1,7 +1,7 @@
 import * as cheerio from 'cheerio';
-import fetch from 'node-fetch';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
+import { fetchWithTimeout } from './fetchWithTimeout';
 
 export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
   const productUrls = [
@@ -22,7 +22,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
     };
 
     // Step 1: Initialize session with pincode via handler
-    const pincodeResponse = await fetch('https://www.vijaysales.com/Handlers/PincodeHandler.ashx', {
+    const pincodeResponse = await fetchWithTimeout('https://www.vijaysales.com/Handlers/PincodeHandler.ashx', {
       method: 'POST',
       headers: {
         ...headers,
@@ -42,7 +42,7 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
       try {
         await new Promise(r => setTimeout(r, index * 200));
 
-        const response = await fetch(url, {
+        const response = await fetchWithTimeout(url, {
           headers: {
             ...headers,
             'Cookie': combinedCookies,
@@ -58,21 +58,19 @@ export async function scrapeVijaySales(pincode: string): Promise<ScrapeResult> {
         if (!title && html.length < 5000) return null;
 
         const bodyText = html;
-        const isInStockSchema = bodyText.includes('http://schema.org/InStock') || bodyText.includes('InStock');
-        const isOutOfStockSchema = bodyText.includes('http://schema.org/OutOfStock') || bodyText.includes('OutOfStock');
+        const isInStockSchema  = bodyText.includes('"http://schema.org/InStock"')  || bodyText.includes('"https://schema.org/InStock"');
+        const isOutOfStockSchema = bodyText.includes('"http://schema.org/OutOfStock"') || bodyText.includes('"https://schema.org/OutOfStock"');
 
-        const addToCart = $('.btn-add-to-cart').length > 0 || bodyText.includes('ADD TO CART') || bodyText.includes('Add to Cart');    
+        const addToCart = $('.btn-add-to-cart').length > 0 || bodyText.includes('ADD TO CART') || bodyText.includes('Add to Cart');
         const buyNow = $('.btn-buy-now').length > 0 || bodyText.includes('BUY NOW') || bodyText.includes('Buy Now');
         const notifyMe = $('.btn-notify-me').length > 0 || bodyText.includes('Notify Me') || bodyText.includes('NOTIFY ME');
         const currentlyUnavailable = bodyText.includes('Currently unavailable') || bodyText.includes('Currently Unavailable');
 
         let isOutOfStock = false;
 
-        if (isInStockSchema) {
-          isOutOfStock = false;
-        } else if (isOutOfStockSchema || currentlyUnavailable || notifyMe) {
+        if (isOutOfStockSchema || currentlyUnavailable || notifyMe) {
           isOutOfStock = true;
-        } else if (addToCart || buyNow) {
+        } else if ((addToCart || buyNow) && isInStockSchema) {
           isOutOfStock = false;
         } else {
           isOutOfStock = true;
