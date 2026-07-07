@@ -12,13 +12,19 @@ export async function sendStockAlert({
   deliveryTime,
   unsubscribeToken,
   telegramChatId,
+  nationalOnly,
 }: NotifyParams) {
   const subject = `🎮 PS5 is BACK IN STOCK on ${platform}!`;
 
-  if (!email) {
-    // Telegram-only subscriber — skip email step entirely.
+  const nationalNote = nationalOnly
+    ? '\n\n⚠️ <i>National stock — delivery to your pincode not verified. Check the site.</i>'
+    : '';
+  const tgText = `🎮 <b>PS5 is BACK IN STOCK on ${escapeHtml(platform)}!</b>\n\nPrice: <b>${escapeHtml(price || 'Check the site')}</b>\n\n<a href="${productUrl}">Buy now →</a>\n\nStock goes fast — act now!${nationalNote}`;
+
+  // National-only stock (pincode not verified): Telegram is free, so alert
+  // there with a disclaimer, but don't spend limited Resend email quota on it.
+  if (!email || nationalOnly) {
     if (telegramChatId) {
-      const tgText = `🎮 <b>PS5 is BACK IN STOCK on ${escapeHtml(platform)}!</b>\n\nPrice: <b>${escapeHtml(price || 'Check the site')}</b>\n\n<a href="${productUrl}">Buy now →</a>\n\nStock goes fast — act now!`;
       await sendTelegramMessage(telegramChatId, tgText);
     }
     return;
@@ -55,7 +61,6 @@ export async function sendStockAlert({
   }
 
   if (telegramChatId) {
-    const tgText = `🎮 <b>PS5 is BACK IN STOCK on ${escapeHtml(platform)}!</b>\n\nPrice: <b>${escapeHtml(price || 'Check the site')}</b>\n\n<a href="${productUrl}">Buy now →</a>\n\nStock goes fast — act now!`;
     await sendTelegramMessage(telegramChatId, tgText);
   }
 }

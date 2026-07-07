@@ -124,6 +124,7 @@ async function processPincode(pincode: string) {
               deliveryTime: result.deliveryTime,
               unsubscribeToken: sub.unsubscribe_token,
               telegramChatId: sub.telegram_chat_id,
+              nationalOnly: result.scope === 'national',
             });
             console.log(`  - Successfully sent alert to ${sub.email || 'Telegram ID: ' + sub.telegram_chat_id}`);
             
