@@ -1,4 +1,3 @@
-import * as cheerio from 'cheerio';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
 import { fetchWithTimeout } from './fetchWithTimeout';
@@ -7,159 +6,112 @@ interface ScrapeOpts {
   maxUrls?: number;
 }
 
-export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
-  const allProductUrls = [
-    'https://www.reliancedigital.in/product/sony-ps5-standard-console-with-2-dualsense-controllers-m7oq28-8963763',
-    'https://www.reliancedigital.in/product/sonyplaystation5standardconsolenba-mg53du-9490141',
-    'https://www.reliancedigital.in/product/sony-playstation-5-digital-console-fortnite-bundle-mk3j7r-9713761',
-    'https://www.reliancedigital.in/product/sony-playstation-5-standard-console-fortnite-bundle-mk3j5b-9713760',
-    'https://www.reliancedigital.in/product/sony-playstation-ps5-slim-digital-console-luh1rv-7537999',
-    'https://www.reliancedigital.in/product/sony-ps5-astro-bot-bundle-standard-gaming-console-m85ewr-8976152',
-    'https://www.reliancedigital.in/product/sony-ps5-console-fortnite-bundle-m4ih5f-8764435',
-    'https://www.reliancedigital.in/product/sony-playstation-5-digital-gaming-console-with-call-of-duty-black-ops-6-bundle-md7dk3-9288584',
-    'https://www.reliancedigital.in/product/sony-playstation-ps5-slim-console-luh1rv-7537998',
-    'https://www.reliancedigital.in/product/sony-ps5-astro-bot-bundle-digital-edition-gaming-console-m85ewr-8976153',
-    'https://www.reliancedigital.in/product/sony-playstation-5-digital-edition-m35xsd-8706126',
-    'https://www.reliancedigital.in/product/sony-playstation-5-digital-edition-console',
-    'https://www.reliancedigital.in/product/sony-ps5-digital-console-fortnite-bundle-m4ih5i-8764436',
-    'https://www.reliancedigital.in/product/sony-ps5-digital-d-chassis-gaming-console-fc26-bundle-mia2lh-9604024',
-    'https://www.reliancedigital.in/product/sony-playstation-5-standard-gaming-console-with-call-of-duty-black-ops-6-bundle-md7djz-9288583',
-    'https://www.reliancedigital.in/product/sony-ps5-standard-d-chassis-gaming-console-fc26-bundle-mia2lh-9604025',
-    'https://www.reliancedigital.in/product/sony-playstation-5-standard-e-chassis-ds-bundle-gaming-console-mn359o-9991585',
-    'https://www.reliancedigital.in/product/sony-playstation-5-digital-e-chassis-gaming-console-mn357x-9991584',
-    'https://www.reliancedigital.in/product/sony-ps5-standard-sa-e-chassis-gaming-console-mmeqbt-9974618'
-  ];
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-  const productUrls = opts.maxUrls ? allProductUrls.slice(0, opts.maxUrls) : allProductUrls;
+// Fynd storefront credentials, public in the page HTML (application_id:token).
+// base64("645a057875d8c4882b096f7e:__-O44-4i")
+const FYND_BEARER = 'NjQ1YTA1Nzg3NWQ4YzQ4ODJiMDk2ZjdlOl9fLU80NC00aQ==';
+
+const ALL_PRODUCT_URLS = [
+  'https://www.reliancedigital.in/product/sony-playstation-5-standard-e-chassis-ds-bundle-gaming-console-mn359o-9991585',
+  'https://www.reliancedigital.in/product/sony-playstation-5-digital-e-chassis-gaming-console-mn357x-9991584',
+  'https://www.reliancedigital.in/product/sony-ps5-standard-sa-e-chassis-gaming-console-mmeqbt-9974618',
+  'https://www.reliancedigital.in/product/sony-playstation-5-digital-console-fortnite-bundle-mk3j7r-9713761',
+  'https://www.reliancedigital.in/product/sony-playstation-5-standard-console-fortnite-bundle-mk3j5b-9713760',
+  'https://www.reliancedigital.in/product/sony-ps5-digital-d-chassis-gaming-console-fc26-bundle-mia2lh-9604024',
+  'https://www.reliancedigital.in/product/sony-ps5-standard-d-chassis-gaming-console-fc26-bundle-mia2lh-9604025',
+  'https://www.reliancedigital.in/product/sonyplaystation5standardconsolenba-mg53du-9490141',
+  'https://www.reliancedigital.in/product/sony-playstation-5-digital-gaming-console-with-call-of-duty-black-ops-6-bundle-md7dk3-9288584',
+  'https://www.reliancedigital.in/product/sony-playstation-5-standard-gaming-console-with-call-of-duty-black-ops-6-bundle-md7djz-9288583',
+  'https://www.reliancedigital.in/product/sony-ps5-standard-console-with-2-dualsense-controllers-m7oq28-8963763',
+  'https://www.reliancedigital.in/product/sony-ps5-astro-bot-bundle-standard-gaming-console-m85ewr-8976152',
+  'https://www.reliancedigital.in/product/sony-ps5-astro-bot-bundle-digital-edition-gaming-console-m85ewr-8976153',
+  'https://www.reliancedigital.in/product/sony-ps5-console-fortnite-bundle-m4ih5f-8764435',
+  'https://www.reliancedigital.in/product/sony-ps5-digital-console-fortnite-bundle-m4ih5i-8764436',
+  'https://www.reliancedigital.in/product/sony-playstation-5-digital-edition-m35xsd-8706126',
+  'https://www.reliancedigital.in/product/sony-playstation-ps5-slim-console-luh1rv-7537998',
+  'https://www.reliancedigital.in/product/sony-playstation-ps5-slim-digital-console-luh1rv-7537999',
+];
+
+const slugFromUrl = (url: string) => url.split('/product/')[1] ?? '';
+
+interface FyndSize {
+  is_available?: boolean;
+  quantity?: number;
+}
+
+export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
+  const productUrls = opts.maxUrls ? ALL_PRODUCT_URLS.slice(0, opts.maxUrls) : ALL_PRODUCT_URLS;
+
+  const headers = {
+    'User-Agent': UA,
+    'Accept': 'application/json, text/plain, */*',
+    'authorization': `Bearer ${FYND_BEARER}`,
+    'x-currency-code': 'INR',
+    'x-location-detail': JSON.stringify({ country_iso_code: 'IN', pincode }),
+    'Referer': 'https://www.reliancedigital.in/',
+  };
 
   try {
-    const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-      'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
-      'Accept-Language': 'en-US,en;q=0.9',
-      'Referer': 'https://www.reliancedigital.in/',
-    };
-
-    // Step 1: Initialize session with pincode
-    const pincodeResponse = await fetchWithTimeout(`https://www.reliancedigital.in/rcom/pincode/check?pincode=${pincode}`, { headers });
-    const rawCookies = pincodeResponse.headers.raw()['set-cookie'] || [];
-    const sessionCookies = rawCookies.map((c: string) => c.split(';')[0]).join('; ');
-    const combinedCookies = `${sessionCookies}; pincode=${pincode}`;
-
-    let bestMatch: any = null;
-    let matchCount = productUrls.length;
+    const availableItems: ScrapeResult['items'] = [];
+    let bestMatch: { title: string; url: string; price: string | null; isOutOfStock: boolean } | null = null;
 
     const fetchPromises = productUrls.map(async (url, index) => {
       try {
-        await new Promise(r => setTimeout(r, index * 200));
+        await new Promise(r => setTimeout(r, index * 150));
 
-        const response = await fetchWithTimeout(url, {
-          headers: {
-            ...headers,
-            'Cookie': combinedCookies,
-          },
-        });
+        const slug = slugFromUrl(url);
+        const response = await fetchWithTimeout(
+          `https://www.reliancedigital.in/api/service/application/catalog/v1.0/products/${slug}/sizes/`,
+          { headers },
+          12000
+        );
+        if (!response.ok) return;
 
+        const data = await response.json();
+        if (!data || typeof data.sellable !== 'boolean') return;
 
-        if (!response.ok) return null;
-        const html = await response.text();
-        const $ = cheerio.load(html);
+        const sizes: FyndSize[] = Array.isArray(data.sizes) ? data.sizes : [];
+        const inStock = data.sellable && sizes.some(s => s.is_available && (s.quantity ?? 0) > 0);
 
-        const title = $('.pdp__title').text().trim() || $('title').text().replace('Buy ', '').split(' at Reliance')[0].trim();
-        if (!title && html.length < 5000) return null;
+        const effective = data.price?.effective?.min;
+        const price = typeof effective === 'number' ? `₹${Math.round(effective).toLocaleString('en-IN')}` : null;
+        const title = nameFromUrl(url);
 
-        const bodyText = html;
-        const mainPdpText = $('#root').text() || bodyText; // Try to target main content
-
-        const addToCart = $('.pdp__addtoCart').length > 0 ||
-                          $('#add-to-cart').length > 0 ||
-                          bodyText.includes('ADD TO CART') ||
-                          bodyText.includes('Add to Cart');
-
-        const buyNow = $('.pdp__buyNow').length > 0 ||
-                        bodyText.includes('BUY NOW') ||
-                        bodyText.includes('Buy Now');
-
-        // Schema.org stock signals — require quoted URL to avoid matching class names / JS vars
-        const isInStockSchema  = bodyText.includes('"http://schema.org/InStock"')  || bodyText.includes('"https://schema.org/InStock"');
-        const isOutOfStockSchema = bodyText.includes('"http://schema.org/OutOfStock"') || bodyText.includes('"https://schema.org/OutOfStock"');
-
-        const bodyWithoutConfig = bodyText.replace('"restricted_articles_toast_message":"Article Currently Unavailable"', '');
-        const currentlyUnavailable = bodyWithoutConfig.toLowerCase().includes('currently unavailable') && !addToCart && !buyNow;
-
-        let isOutOfStock = false;
-
-        if (currentlyUnavailable || isOutOfStockSchema) {
-          isOutOfStock = true;
-        } else if ((addToCart || buyNow) && isInStockSchema) {
-          // Require BOTH a buy button AND schema confirmation to call it in-stock
-          isOutOfStock = false;
-        } else {
-          isOutOfStock = true;
+        const item = { title, url, price, isOutOfStock: !inStock };
+        if (!item.isOutOfStock && item.price) {
+          availableItems!.push({ name: item.title, url: item.url, price: item.price, inStock: true });
         }
-
-        // Extract price from Schema.org if possible
-        const priceMatchSchema = bodyText.match(/"price":\s*"(\d+)"/);
-        let price = '';
-        if (priceMatchSchema) {
-          price = `₹${parseInt(priceMatchSchema[1]).toLocaleString('en-IN')}`;
-        } else {
-          const rawPrice = $('.pdp__priceSection .sc-bxivhb').first().text().trim() ||
-                           $('.pdp__priceSection').first().text().trim();
-          const pMatch = rawPrice.match(/₹\s*[\d,]+(?:\.\d+)?/);
-          price = pMatch ? pMatch[0].replace(/\s+/g, '') : '';
+        if (!bestMatch || (bestMatch.isOutOfStock && !item.isOutOfStock)) {
+          bestMatch = item;
         }
-
-        return {
-          title,
-          url,
-          price: price || null,
-          isOutOfStock: isOutOfStock
-        };
-      } catch (e) {
-        return null;
+      } catch {
+        // ignore individual product failures
       }
     });
 
-    const results = await Promise.allSettled(fetchPromises);
-    const availableItems: any[] = [];
-
-    for (const result of results) {
-      if (result.status === 'fulfilled' && result.value) {
-        const item = result.value;
-        if (!item.isOutOfStock && item.price) {
-          availableItems.push({
-            name: item.title,
-            url: item.url,
-            price: item.price,
-            inStock: true
-          });
-          if (!bestMatch || bestMatch.isOutOfStock) {
-            bestMatch = item;
-          }
-        } else if (!bestMatch) {
-          bestMatch = item;
-        }
-      }
-    }
+    await Promise.allSettled(fetchPromises);
 
     if (!bestMatch) {
-       return {
+      return {
         inStock: false,
         price: null,
         productUrl: productUrls[0],
         productName: nameFromUrl(productUrls[0]),
-        listingCount: matchCount,
+        listingCount: productUrls.length,
         items: [],
+        error: true,
+        note: 'Reliance Digital check failed — status unknown',
       };
     }
 
+    const match: { title: string; url: string; price: string | null; isOutOfStock: boolean } = bestMatch;
     return {
-      inStock: !bestMatch.isOutOfStock,
-      price: bestMatch.price,
-      productUrl: bestMatch.url,
-      productName: bestMatch.title,
-      listingCount: matchCount,
+      inStock: !match.isOutOfStock,
+      price: match.price,
+      productUrl: match.url,
+      productName: match.title,
+      listingCount: productUrls.length,
       items: availableItems,
     };
   } catch (error) {

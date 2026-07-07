@@ -1,149 +1,166 @@
-import * as cheerio from 'cheerio';
 import { ScrapeResult } from '../types';
 import { nameFromUrl } from './nameFromUrl';
 import { fetchWithTimeout } from './fetchWithTimeout';
 
-export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
-  const productUrls = [
-    'https://www.amazon.in/Sony-PlaysStation-Console-Storage-Capacity/dp/B0CWH9WCWT',
-    'https://www.amazon.in/Sony-Ps5-Gaming-Console-Controllers/dp/B0DT9MQQC1',
-    'https://www.amazon.in/Sony-PlayStation%C2%AE5-Digital-Edition-slim/dp/B0CY5QW186',
-    'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0FNS22DLT',
-    'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0CY5HVDS2',
-    'https://www.amazon.in/Sony-PlayStation%C2%AE5-Console-Disc-Edition/dp/B0FF9NXYDL'
-  ];
+const UA = 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/131.0.0.0 Safari/537.36';
 
-  const addressUrl = 'https://www.amazon.in/gp/delivery/ajax/address-change.html';
+const PRODUCT_URLS = [
+  'https://www.amazon.in/Sony-PlaysStation-Console-Storage-Capacity/dp/B0CWH9WCWT',
+  'https://www.amazon.in/Sony-Ps5-Gaming-Console-Controllers/dp/B0DT9MQQC1',
+  'https://www.amazon.in/Sony-PlayStation%C2%AE5-Digital-Edition-slim/dp/B0CY5QW186',
+  'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0FNS22DLT',
+  'https://www.amazon.in/Sony-CFI-2008A01X-PlayStation%C2%AE5-Console-slim/dp/B0CY5HVDS2',
+  'https://www.amazon.in/Sony-PlayStation%C2%AE5-Console-Disc-Edition/dp/B0FF9NXYDL',
+];
+
+// Regex extraction instead of cheerio: PDP HTML is ~1MB and we only need a few
+// anchored fragments, so full DOM parsing wastes CPU on serverless.
+function extract(html: string, re: RegExp): string {
+  return (html.match(re)?.[1] ?? '').replace(/<[^>]+>/g, '').replace(/\s+/g, ' ').trim();
+}
+
+interface CookieJar { map: Map<string, string> }
+
+interface NodeFetchResponse { headers: { raw(): Record<string, string[]> } }
+
+function storeCookies(jar: CookieJar, res: NodeFetchResponse) {
+  const raw: string[] = res.headers.raw()['set-cookie'] || [];
+  for (const c of raw) {
+    const [kv] = c.split(';');
+    const eq = kv.indexOf('=');
+    if (eq < 1) continue;
+    const key = kv.slice(0, eq).trim();
+    const val = kv.slice(eq + 1);
+    if (val && val !== '-' && val !== '""') jar.map.set(key, val);
+  }
+}
+
+const cookieHeader = (jar: CookieJar) => [...jar.map.entries()].map(([k, v]) => `${k}=${v}`).join('; ');
+
+export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
+  const baseHeaders = {
+    'User-Agent': UA,
+    'Accept-Language': 'en-IN,en;q=0.9',
+    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+  };
 
   try {
-    const headers = {
-      'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36', 
-      'Accept-Language': 'en-IN,en;q=0.9',
-      'Content-Type': 'application/x-www-form-urlencoded',
-    };
+    const jar: CookieJar = { map: new Map() };
 
-    // Step 1: Set the Pincode via Amazon's internal address-change endpoint
-    const addressResponse = await fetchWithTimeout(addressUrl, {
+    // Step 1: glow modal endpoint mints a session (homepage returns a bot page,
+    // but this endpoint reliably sets session cookies).
+    const modal = await fetchWithTimeout(
+      'https://www.amazon.in/portal-migration/hz/glow/get-rendered-address-selections?deviceType=desktop&pageType=Gateway&storeContext=NoStoreName&actionSource=desktop-modal',
+      { headers: { ...baseHeaders, 'X-Requested-With': 'XMLHttpRequest', 'Referer': 'https://www.amazon.in/' } },
+      10000
+    );
+    storeCookies(jar, modal);
+
+    // Step 2: bind the pincode to this session
+    const addr = await fetchWithTimeout('https://www.amazon.in/gp/delivery/ajax/address-change.html', {
       method: 'POST',
-      headers,
+      headers: {
+        ...baseHeaders,
+        'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8',
+        'Cookie': cookieHeader(jar),
+        'x-requested-with': 'XMLHttpRequest',
+        'Referer': 'https://www.amazon.in/',
+        'Origin': 'https://www.amazon.in',
+      },
       body: new URLSearchParams({
-        'locationType': 'LOCATION_INPUT',
-        'zipCode': pincode,
-        'storeContext': 'generic',
-        'deviceType': 'web',
-        'pageType': 'Detail',
-        'actionSource': 'glow'
-      })
-    });
+        locationType: 'LOCATION_INPUT',
+        zipCode: pincode,
+        storeContext: 'generic',
+        deviceType: 'web',
+        pageType: 'Gateway',
+        actionSource: 'glow',
+      }),
+    }, 10000);
+    storeCookies(jar, addr);
 
-    // Correctly handle multiple set-cookie headers
-    const rawCookies = addressResponse.headers.raw()['set-cookie'] || [];
-    const cookies = rawCookies.map((c: string) => c.split(';')[0]).join('; ');
+    let addressBound = false;
+    try {
+      const addrJson = await addr.json();
+      addressBound = addrJson?.isAddressUpdated === 1;
+    } catch { /* non-JSON means bot wall; PDP glow check below still guards us */ }
 
-    let bestMatch: any = null;
-    let matchCount = productUrls.length;
+    const cookies = cookieHeader(jar);
 
-    // Step 2: Fetch all product pages concurrently
-    const fetchPromises = productUrls.map(async (url, index) => {
+    const fetchPromises = PRODUCT_URLS.map(async (url, index) => {
       try {
-        // Small staggered delay
-        await new Promise(r => setTimeout(r, index * 200));
+        await new Promise(r => setTimeout(r, index * 250));
 
         const response = await fetchWithTimeout(url, {
-          headers: {
-            ...headers,
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36',
-            'Cookie': cookies,
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
-          },
-        });
+          headers: { ...baseHeaders, 'Cookie': cookies },
+        }, 15000);
 
         if (!response.ok) return null;
-        const html = await response.text();
-        const $ = cheerio.load(html);
+        const html: string = await response.text();
 
-        const title = $('#productTitle').text().trim();
-        if (!title) return null; // Captcha or invalid page
+        // Captcha / bot interstitial
+        if (html.includes('api-services-support@amazon.com')) return null;
 
-        const availabilityText = $('#availability').text().trim().toLowerCase();
-        const outOfStockDiv = $('#outOfStock').length > 0;
-        const addToCart = $('#add-to-cart-button').length > 0 || $('#add-to-cart-button-ubb').length > 0 || $('input[name="submit.add-to-cart"]').length > 0;
-        const buyNow = $('#buy-now-button').length > 0 || $('input[name="submit.buy-now"]').length > 0;
-        const inStockText = availabilityText.includes('in stock') || availabilityText.includes('available');
+        const title = extract(html, /id="productTitle"[^>]*>([\s\S]{1,400}?)<\/span>/);
+        if (!title) return null;
 
-        // If we see Add to Cart or Buy Now, it's definitely IN STOCK regardless of text
-        let isOutOfStock = false;
+        // Guard: if the delivery location widget doesn't show our pincode, the
+        // page reflects national stock, not this pincode — don't trust it.
+        const glow = extract(html, /id="glow-ingress-line2"[^>]*>([\s\S]{1,200}?)<\/span>/);
+        const pincodeApplied = glow.includes(pincode);
+        if (addressBound && !pincodeApplied) return null;
 
-        if (addToCart || buyNow) {
-          isOutOfStock = false;
-        } else if (outOfStockDiv || availabilityText.includes('currently unavailable') || availabilityText.includes('out of stock') || availabilityText.includes('cannot be delivered')) {
+        const availability = extract(html, /id="availability"[^>]*>[\s\S]{0,200}?<span[^>]*>([\s\S]{1,300}?)<\/span>/).toLowerCase();
+        const addToCart = html.includes('id="add-to-cart-button"') || html.includes('name="submit.add-to-cart"');
+        const buyNow = html.includes('id="buy-now-button"') || html.includes('name="submit.buy-now"');
+        const outOfStockDiv = html.includes('id="outOfStock"');
+
+        // Note: check "unavailable" BEFORE "available" — "currently unavailable"
+        // contains the substring "available".
+        const saysUnavailable =
+          availability.includes('unavailable') ||
+          availability.includes('out of stock') ||
+          availability.includes('cannot be delivered') ||
+          availability.includes('not deliverable');
+        const saysInStock = !saysUnavailable && (availability.includes('in stock') || availability.includes('available'));
+
+        let isOutOfStock: boolean;
+        if (outOfStockDiv || saysUnavailable) {
           isOutOfStock = true;
-        } else if (!inStockText && availabilityText.length > 0) {
-          // If there's text but it doesn't say "In Stock", assume OOS
+        } else if ((addToCart || buyNow) && saysInStock) {
+          isOutOfStock = false;
+        } else if (addToCart || buyNow) {
+          // Buttons present but availability text missing — treat as in stock
+          // only when the pincode was verified as applied.
+          isOutOfStock = !pincodeApplied;
+        } else {
           isOutOfStock = true;
         }
-
-        // Prefer .a-offscreen (full accessible price like "₹49,999.00"), fall back to .a-price-whole
-        const priceContainers = [
-          '#centerCol #corePrice_desktop_feature_div',
-          '#centerCol #corePriceDisplay_desktop_feature_div',
-          '#rightCol #corePrice_feature_div',
-          '#buybox',
-        ];
 
         let price = '';
         if (!isOutOfStock) {
-          for (const container of priceContainers) {
-            // Try full offscreen text first
-            const offscreen = $(`${container} .a-price .a-offscreen`).first().text().trim();
-            if (offscreen) {
-              const match = offscreen.match(/₹\s*[\d,]+(?:\.\d+)?/);
-              if (match) { price = match[0].replace(/\s+/g, ''); break; }
-            }
-            // Fallback: stitch whole + fraction
-            const whole = $(`${container} .a-price-whole`).first().text().replace(/[^\d,]/g, '').replace(/[,.]$/, '');
-            if (whole) {
-              const fraction = $(`${container} .a-price-fraction`).first().text().replace(/\D/g, '');
-              price = '₹' + whole + (fraction ? `.${fraction}` : '');
-              break;
-            }
-          }
-          // Last-resort old layout
-          if (!price) {
-            const legacy = $('#priceblock_ourprice, #priceblock_dealprice').first().text().trim();
-            const m = legacy.match(/₹\s*[\d,]+(?:\.\d+)?/);
-            if (m) price = m[0].replace(/\s+/g, '');
-          }
+          // Search near the buybox/core price block first, then fall back.
+          const coreIdx = html.search(/id="corePrice|id="apex_desktop/);
+          const region = coreIdx > -1 ? html.slice(coreIdx, coreIdx + 5000) : html;
+          const m = region.match(/class="a-offscreen">\s*(₹[\d,]+(?:\.\d+)?)/) || html.match(/id="priceblock_(?:our|deal)price"[^>]*>\s*(₹[\d,]+(?:\.\d+)?)/);
+          if (m) price = m[1].replace(/\s+/g, '');
         }
 
-        return {
-          title,
-          url,
-          price: (price && !isOutOfStock) ? price : null,
-          isOutOfStock: isOutOfStock
-        };
-      } catch (e) {
+        return { title, url, price: price || null, isOutOfStock };
+      } catch {
         return null;
       }
     });
 
     const results = await Promise.allSettled(fetchPromises);
-    const availableItems: any[] = [];
+    const availableItems: ScrapeResult['items'] = [];
+    let bestMatch: { title: string; url: string; price: string | null; isOutOfStock: boolean } | null = null;
 
-    // Evaluate results to find the best match and collect all available items
     for (const result of results) {
       if (result.status === 'fulfilled' && result.value) {
         const item = result.value;
         if (!item.isOutOfStock && item.price) {
-          availableItems.push({
-            name: item.title,
-            url: item.url,
-            price: item.price,
-            inStock: true
-          });
-          if (!bestMatch || bestMatch.isOutOfStock) {
-            bestMatch = item;
-          }
+          availableItems.push({ name: item.title, url: item.url, price: item.price, inStock: true });
+          if (!bestMatch || bestMatch.isOutOfStock) bestMatch = item;
         } else if (!bestMatch) {
           bestMatch = item;
         }
@@ -151,13 +168,15 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     }
 
     if (!bestMatch) {
-       return {
+      return {
         inStock: false,
         price: null,
-        productUrl: productUrls[0],
-        productName: nameFromUrl(productUrls[0]),
-        listingCount: matchCount,
+        productUrl: PRODUCT_URLS[0],
+        productName: nameFromUrl(PRODUCT_URLS[0]),
+        listingCount: PRODUCT_URLS.length,
         items: [],
+        error: true, // every page failed (blocked or pincode not applied) — unknown, not "no stock"
+        note: 'Amazon check could not be verified for this pincode',
       };
     }
 
@@ -166,7 +185,7 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
       price: bestMatch.price,
       productUrl: bestMatch.url,
       productName: bestMatch.title,
-      listingCount: matchCount,
+      listingCount: PRODUCT_URLS.length,
       items: availableItems,
     };
   } catch (error) {
@@ -174,9 +193,9 @@ export async function scrapeAmazon(pincode: string): Promise<ScrapeResult> {
     return {
       inStock: false,
       price: null,
-      productUrl: productUrls[0],
-      productName: nameFromUrl(productUrls[0]),
-      listingCount: productUrls.length,
+      productUrl: PRODUCT_URLS[0],
+      productName: nameFromUrl(PRODUCT_URLS[0]),
+      listingCount: PRODUCT_URLS.length,
       error: true,
     };
   }

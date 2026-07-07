@@ -76,3 +76,10 @@ ALTER TABLE subscribers ADD COLUMN IF NOT EXISTS telegram_chat_id TEXT;
 ALTER TABLE subscribers ALTER COLUMN is_active SET DEFAULT FALSE;
 ALTER TABLE subscribers ALTER COLUMN email DROP NOT NULL;   -- Telegram-only signups have no email
 UPDATE subscribers SET confirm_token = gen_random_uuid()::TEXT WHERE confirm_token IS NULL;
+
+-- ============================================================================
+-- MIGRATION (2026-07): scraper rewrite — the cron and /api/live-check upsert
+-- the list of purchasable listings per platform. Safe to re-run.
+-- ============================================================================
+ALTER TABLE quick_commerce_stock ADD COLUMN IF NOT EXISTS available_items JSONB;
+ALTER TABLE stock_status ADD COLUMN IF NOT EXISTS available_items JSONB;

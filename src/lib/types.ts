@@ -17,6 +17,7 @@ export interface ScrapeResult {
   error?: boolean;
   deliveryTime?: string;
   note?: string; // Surface state like "Store not serviceable here"
+  scope?: 'pincode' | 'national'; // 'national' = stock not verified for the user's pincode
 }
 
 export interface Subscriber {
@@ -60,4 +61,5 @@ export interface NotifyParams {
   deliveryTime?: string;
   unsubscribeToken: string;
   telegramChatId?: string | null;
+  nationalOnly?: boolean; // stock confirmed nationally but not for the subscriber's pincode
 }

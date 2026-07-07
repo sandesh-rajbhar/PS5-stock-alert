@@ -106,6 +106,7 @@ async function processPincode(pincode: string, isBaseline: boolean) {
             deliveryTime: result.deliveryTime,
             unsubscribeToken: sub.unsubscribe_token,
             telegramChatId: sub.telegram_chat_id,
+            nationalOnly: result.scope === 'national',
           });
           await supabaseAdmin.from('notification_log').insert({
             subscriber_id: sub.id,
