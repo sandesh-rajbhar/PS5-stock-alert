@@ -16,6 +16,18 @@ function cdata(s: string): string {
   return s.replace(/<!\[CDATA\[([\s\S]*?)\]\]>/g, '$1').trim();
 }
 
+const NAMED_ENTITIES: Record<string, string> = {
+  amp: '&', lt: '<', gt: '>', quot: '"', apos: "'", nbsp: ' ',
+  ndash: '–', mdash: '—', hellip: '…', rsquo: '’', lsquo: '‘', rdquo: '”', ldquo: '“',
+};
+
+function decodeEntities(s: string): string {
+  return s
+    .replace(/&#(\d+);/g, (_, n) => String.fromCodePoint(Number(n)))
+    .replace(/&#x([0-9a-f]+);/gi, (_, n) => String.fromCodePoint(parseInt(n, 16)))
+    .replace(/&([a-z]+);/gi, (m, name) => NAMED_ENTITIES[name.toLowerCase()] ?? m);
+}
+
 function tag(xml: string, name: string): string {
   const m = xml.match(new RegExp(`<${name}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/${name}>`, 'i'));
   return m ? cdata(m[1]).trim() : '';
@@ -29,13 +41,13 @@ function attr(xml: string, tagName: string, attrName: string): string {
 function parseItems(xml: string, source: string, sourceColor: string): NewsItem[] {
   const blocks = xml.match(/<item[\s>][\s\S]*?<\/item>/g) ?? [];
   return blocks.slice(0, 6).flatMap((block): NewsItem[] => {
-    const title = tag(block, 'title');
+    const title = decodeEntities(tag(block, 'title'));
     const link  = tag(block, 'link') || attr(block, 'link', 'href');
     if (!title || !link) return [];
 
     const pubDate     = tag(block, 'pubDate');
     const rawDesc     = tag(block, 'description');
-    const description = rawDesc.replace(/<[^>]+>/g, '').replace(/&[a-z]+;/gi, ' ').trim().slice(0, 160);
+    const description = decodeEntities(rawDesc.replace(/<[^>]+>/g, '')).replace(/\s+/g, ' ').trim().slice(0, 160);
 
     // image: enclosure → media:content → media:thumbnail → first <img> in body
     const image: string | null =
@@ -49,10 +61,12 @@ function parseItems(xml: string, source: string, sourceColor: string): NewsItem[
   });
 }
 
+// Sources must allow cross-site image embedding: Push Square and VGC were
+// dropped because their Cloudflare hotlink protection 403s embedded images.
 const FEEDS = [
-  { url: 'https://www.pushsquare.com/feeds/latest',          name: 'Push Square',       color: '#f97316' },
-  { url: 'https://blog.playstation.com/feed/',               name: 'PlayStation Blog',  color: '#0070ff' },
-  { url: 'https://www.videogameschronicle.com/feed/',        name: 'VGC',               color: '#a855f7' },
+  { url: 'https://www.ign.com/rss/articles/feed?tags=playstation', name: 'IGN',              color: '#dc2626' },
+  { url: 'https://blog.playstation.com/feed/',                     name: 'PlayStation Blog', color: '#0070ff' },
+  { url: 'https://kotaku.com/tag/playstation-5/rss',               name: 'Kotaku',           color: '#eab308' },
 ];
 
 export async function GET() {

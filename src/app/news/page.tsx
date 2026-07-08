@@ -15,13 +15,13 @@ function timeAgo(dateStr: string): string {
   return `${Math.floor(h / 24)}d ago`;
 }
 
-const SOURCES = ['All', 'Push Square', 'PlayStation Blog', 'VGC'] as const;
+const SOURCES = ['All', 'IGN', 'PlayStation Blog', 'Kotaku'] as const;
 type Source = typeof SOURCES[number];
 
 const SOURCE_COLORS: Record<string, string> = {
-  'Push Square':      '#f97316',
+  'IGN':              '#dc2626',
   'PlayStation Blog': '#0070ff',
-  'VGC':              '#a855f7',
+  'Kotaku':           '#eab308',
 };
 
 function SkeletonCard({ featured = false }: { featured?: boolean }) {
@@ -50,18 +50,24 @@ function NewsCard({ item, featured = false }: { item: NewsItem; featured?: boole
     >
       {/* Thumbnail */}
       <div className={`relative overflow-hidden bg-theme-card shrink-0 ${featured ? 'h-48 sm:h-64 lg:h-72' : 'h-40 sm:h-44'}`}>
-        {item.image ? (
+        {/* Branded fallback layer — shown when there's no image or it fails to load. */}
+        <div
+          className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+          style={{ background: `linear-gradient(135deg, ${color}33 0%, transparent 70%)` }}
+        >
+          <Newspaper className="w-12 h-12 opacity-25" style={{ color }} />
+          <span className="text-[10px] font-black uppercase tracking-[0.2em] opacity-40" style={{ color }}>
+            {item.source}
+          </span>
+        </div>
+        {item.image && (
           <img
             src={item.image}
             alt={item.title}
-            className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+            className="relative w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
             loading="lazy"
             onError={e => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
           />
-        ) : (
-          <div className="w-full h-full flex items-center justify-center">
-            <Newspaper className="w-12 h-12 text-theme-faint opacity-20" />
-          </div>
         )}
         {/* source badge */}
         <span
@@ -142,7 +148,7 @@ export default function NewsPage() {
             Stay in the Loop.
           </h1>
           <p className="text-theme-muted text-base leading-relaxed max-w-xl mx-auto">
-            Aggregated PS5 news from Push Square, PlayStation Blog, and Video Games Chronicle — updated every hour.
+            Aggregated PS5 news from IGN, PlayStation Blog, and Kotaku — updated every hour.
           </p>
         </div>
       </section>

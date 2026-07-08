@@ -112,9 +112,9 @@ function MockAlert() {
 
 function MockNews() {
   const cards = [
-    { source: 'Push Square',      color: '#f97316', title: 'PS5 Pro Confirmed for India Launch — Price & Date Revealed' },
+    { source: 'IGN',              color: '#dc2626', title: 'PS5 Pro Confirmed for India Launch — Price & Date Revealed' },
     { source: 'PlayStation Blog', color: '#0070ff', title: 'August PS Plus Games Announced: Three Big Titles Incoming'   },
-    { source: 'VGC',              color: '#a855f7', title: 'GTA VI Release Window Narrowed Down for PS5'                 },
+    { source: 'Kotaku',           color: '#eab308', title: 'GTA VI Release Window Narrowed Down for PS5'                 },
   ];
   return (
     <div className="relative w-full max-w-xs mx-auto space-y-3">
@@ -193,7 +193,7 @@ const FEATURES = [
     accent: '#a855f7',
     label: 'PS5 News Hub',
     headline: 'Everything PS5. One feed.',
-    body: 'Aggregated from Push Square, PlayStation Blog, and VGC. No algorithm. No clutter. Just the most important PS5 news, refreshed every hour.',
+    body: 'Aggregated from IGN, PlayStation Blog, and Kotaku. No algorithm. No clutter. Just the most important PS5 news, refreshed every hour.',
     cta: 'Read Today\'s News',
     href: '/news',
     visual: <MockNews />,

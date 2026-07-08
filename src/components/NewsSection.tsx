@@ -55,7 +55,7 @@ export default function NewsSection() {
               PS5 News
             </h2>
             <p className="text-xs font-bold text-theme-faint uppercase tracking-widest mt-1">
-              From Push Square, PlayStation Blog &amp; VGC
+              From IGN, PlayStation Blog &amp; Kotaku
             </p>
           </div>
           <Link
@@ -87,18 +87,24 @@ export default function NewsSection() {
               >
                 {/* Thumbnail */}
                 <div className="relative h-44 overflow-hidden bg-theme-card">
-                  {item.image ? (
+                  {/* Branded fallback layer — shown when there's no image or it fails to load. */}
+                  <div
+                    className="absolute inset-0 flex flex-col items-center justify-center gap-2"
+                    style={{ background: `linear-gradient(135deg, ${item.sourceColor}33 0%, transparent 70%)` }}
+                  >
+                    <Newspaper className="w-10 h-10 opacity-25" style={{ color: item.sourceColor }} />
+                    <span className="text-[9px] font-black uppercase tracking-[0.2em] opacity-40" style={{ color: item.sourceColor }}>
+                      {item.source}
+                    </span>
+                  </div>
+                  {item.image && (
                     <img
                       src={item.image}
                       alt={item.title}
-                      className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
+                      className="relative w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       loading="lazy"
                       onError={(e) => { (e.currentTarget as HTMLImageElement).style.display = 'none'; }}
                     />
-                  ) : (
-                    <div className="w-full h-full flex items-center justify-center">
-                      <Newspaper className="w-10 h-10 text-theme-faint opacity-30" />
-                    </div>
                   )}
                   {/* Source badge */}
                   <span
