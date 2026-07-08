@@ -32,7 +32,6 @@ export default function TrackerPage() {
     setSearchArea(areaName || null);
 
     const mapped: StockStatus[] = results.map((r, i) => {
-      const platform = r.platform.toLowerCase();
       return {
         id: `live-${i}`,
         platform: r.platform,
@@ -41,7 +40,9 @@ export default function TrackerPage() {
         price: r.price,
         product_url: r.productUrl,
         available_items: r.items,
-        is_pincode_dependent: ['amazon', 'flipkart', 'croma', 'reliance digital', 'vijay sales'].includes(platform),
+        // Platforms whose check isn't pincode-aware (scope 'national', e.g.
+        // Vijay Sales) must show as national stock, not local.
+        is_pincode_dependent: r.scope !== 'national',
         is_location_dependent: false,
         note: r.note,
         last_checked: new Date().toISOString(),

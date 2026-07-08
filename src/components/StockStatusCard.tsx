@@ -73,6 +73,12 @@ export default function StockStatusCard({ status }: Props) {
               : 'National Stock'}
         </div>
 
+        {isAvailable && status.note && (
+          <p className="mt-2 text-[10px] font-bold text-amber-500/90 leading-snug">
+            {status.note}
+          </p>
+        )}
+
         {/* Multiple Items Support */}
         {isAvailable && status.available_items && status.available_items.length > 1 && (
           <div className="mt-6 pt-4 border-t dark:border-zinc-800 border-zinc-100">
