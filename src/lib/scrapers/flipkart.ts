@@ -25,10 +25,19 @@ const ALL_PRODUCT_URLS = [
   'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c',
 ];
 
+interface ListingAvailability {
+  availabilityStatus?: string;
+  isServiceable?: boolean;
+  unserviceabilityReason?: string;
+}
+
 // Deep-walk the rome page JSON collecting every object that carries listing
 // availability. Flipkart nests these under varying slot paths, so walking is
 // more robust than hardcoding a path.
-function collectAvailability(node: unknown, out: { availabilityStatus?: string; serviceable?: boolean }[]): void {
+// IMPORTANT: availabilityStatus === "IN_STOCK" is the NATIONAL listing state;
+// whether it ships to the requested pincode is a separate `isServiceable`
+// boolean on the same object (with `unserviceabilityReason` when false).
+function collectAvailability(node: unknown, out: ListingAvailability[]): void {
   if (!node || typeof node !== 'object') return;
   if (Array.isArray(node)) {
     for (const item of node) collectAvailability(item, out);
@@ -38,7 +47,12 @@ function collectAvailability(node: unknown, out: { availabilityStatus?: string; 
   if (typeof obj.availabilityStatus === 'string') {
     out.push({
       availabilityStatus: obj.availabilityStatus as string,
-      serviceable: typeof obj.serviceable === 'boolean' ? (obj.serviceable as boolean) : undefined,
+      isServiceable: typeof obj.isServiceable === 'boolean'
+        ? (obj.isServiceable as boolean)
+        : typeof obj.serviceable === 'boolean'
+          ? (obj.serviceable as boolean)
+          : undefined,
+      unserviceabilityReason: typeof obj.unserviceabilityReason === 'string' ? (obj.unserviceabilityReason as string) : undefined,
     });
   }
   for (const key of Object.keys(obj)) collectAvailability(obj[key], out);
@@ -87,14 +101,15 @@ export async function scrapeFlipkart(pincode: string, opts: ScrapeOpts = {}): Pr
         if (text.trimStart().startsWith('<')) { blockedCount++; return; }
 
         const data = JSON.parse(text);
-        const listings: { availabilityStatus?: string; serviceable?: boolean }[] = [];
+        const listings: ListingAvailability[] = [];
         collectAvailability(data, listings);
         if (listings.length === 0) return;
 
-        // In stock for this pincode only if some listing is IN_STOCK and not
-        // explicitly unserviceable.
+        // In stock for THIS pincode only with an explicit isServiceable: true
+        // alongside IN_STOCK. IN_STOCK alone is national stock and caused
+        // false alerts for undeliverable pincodes.
         const inStock = listings.some(
-          l => l.availabilityStatus === 'IN_STOCK' && l.serviceable !== false
+          l => l.availabilityStatus === 'IN_STOCK' && l.isServiceable === true && !l.unserviceabilityReason
         );
 
         const title = findFirstString(text, /"title"\s*:\s*"((?:[^"\\]|\\.){10,300}?)"/)?.replace(/\\"/g, '"') || nameFromUrl(url);
