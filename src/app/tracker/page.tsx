@@ -70,6 +70,10 @@ export default function TrackerPage() {
               Enter your pincode to check live PS5 availability across Amazon,
               Flipkart, Croma, Reliance Digital &amp; Vijay Sales.
             </p>
+            <p className="text-[11px] font-medium text-theme-faint mt-2 max-w-lg mx-auto">
+              Amazon, Flipkart, Croma &amp; Reliance Digital are checked for delivery to your
+              pincode · Vijay Sales shows India-wide stock only (alerts via Telegram, not email)
+            </p>
           </div>
 
           {/* Subscribe form */}
