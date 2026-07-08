@@ -154,7 +154,7 @@ export default function NewsPage() {
       </section>
 
       {/* Filters + refresh */}
-      <div className="sticky top-[57px] z-40 bg-theme-nav backdrop-blur-md border-b border-theme-nav px-4 py-3">
+      <div className="bg-theme-nav backdrop-blur-md border-b border-theme-nav px-4 py-3">
         <div className="max-w-7xl mx-auto flex items-center justify-between gap-4">
           {/* Source filters */}
           <div className="flex items-center gap-2 overflow-x-auto scrollbar-none pb-0.5">
