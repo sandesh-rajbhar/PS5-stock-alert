@@ -238,13 +238,13 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
             </button>
           </div>
 
-          <div className="space-y-3 max-h-[250px] sm:max-h-[300px] overflow-y-auto pr-2 custom-scrollbar">
+          <div className="space-y-3">
             {checkResults.map((result) => (
-              <div key={result.platform} className="flex items-center justify-between p-3 sm:p-4 rounded-xl border border-theme-item bg-theme-item">
-                <div className="flex flex-col">
+              <div key={result.platform} className="flex items-center justify-between gap-3 p-3 sm:p-4 rounded-xl border border-theme-item bg-theme-item">
+                <div className="flex flex-col min-w-0 flex-1 text-left">
                   <span className="font-bold text-xs sm:text-sm text-theme-page">{result.platform}</span>
                   {result.note ? (
-                    <span className="text-[8px] font-medium text-amber-400 uppercase tracking-tighter">
+                    <span className="text-[8px] font-medium text-amber-400 uppercase tracking-tighter leading-snug">
                       {result.note}
                     </span>
                   ) : result.listingCount && result.listingCount > 0 ? (
@@ -253,7 +253,7 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                     </span>
                   ) : null}
                 </div>
-                <span className={`text-[9px] sm:text-[10px] font-black uppercase px-2 py-1 rounded border ${
+                <span className={`shrink-0 text-[9px] sm:text-[10px] font-black uppercase px-2 py-1 rounded border ${
                   result.inStock 
                     ? 'bg-green-500/10 text-green-400 border-green-500/20' 
                     : result.note 
