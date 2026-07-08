@@ -55,7 +55,7 @@ export default function NewsSection() {
               PS5 News
             </h2>
             <p className="text-xs font-bold text-theme-faint uppercase tracking-widest mt-1">
-              From Push Square, PlayStation Blog &amp; VGC
+              From IGN, PlayStation Blog &amp; Kotaku
             </p>
           </div>
           <Link
@@ -87,8 +87,7 @@ export default function NewsSection() {
               >
                 {/* Thumbnail */}
                 <div className="relative h-44 overflow-hidden bg-theme-card">
-                  {/* Branded fallback layer — shown when there's no image, or
-                      the source blocks hotlinking (Push Square/VGC 403 cross-site). */}
+                  {/* Branded fallback layer — shown when there's no image or it fails to load. */}
                   <div
                     className="absolute inset-0 flex flex-col items-center justify-center gap-2"
                     style={{ background: `linear-gradient(135deg, ${item.sourceColor}33 0%, transparent 70%)` }}

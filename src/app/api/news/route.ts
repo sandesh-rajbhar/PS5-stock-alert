@@ -61,10 +61,12 @@ function parseItems(xml: string, source: string, sourceColor: string): NewsItem[
   });
 }
 
+// Sources must allow cross-site image embedding: Push Square and VGC were
+// dropped because their Cloudflare hotlink protection 403s embedded images.
 const FEEDS = [
-  { url: 'https://www.pushsquare.com/feeds/latest',          name: 'Push Square',       color: '#f97316' },
-  { url: 'https://blog.playstation.com/feed/',               name: 'PlayStation Blog',  color: '#0070ff' },
-  { url: 'https://www.videogameschronicle.com/feed/',        name: 'VGC',               color: '#a855f7' },
+  { url: 'https://www.ign.com/rss/articles/feed?tags=playstation', name: 'IGN',              color: '#dc2626' },
+  { url: 'https://blog.playstation.com/feed/',                     name: 'PlayStation Blog', color: '#0070ff' },
+  { url: 'https://kotaku.com/tag/playstation-5/rss',               name: 'Kotaku',           color: '#eab308' },
 ];
 
 export async function GET() {
