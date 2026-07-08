@@ -350,6 +350,10 @@ export default function SubscribeForm({ onResults }: { onResults?: (pincode: str
                   <p className="text-[10px] text-zinc-400 text-center leading-relaxed">
                     Check your Spam/Promotions folder if you don&apos;t see the confirmation email within a minute. Stock alerts may also land there — mark as Not Spam to ensure delivery.
                   </p>
+                  <p className="text-[10px] text-amber-400/80 text-center leading-relaxed">
+                    Vijay Sales stock is India-wide (not pincode-verified), so its alerts go out on
+                    Telegram only — email alerts cover the other four stores.
+                  </p>
                 </form>
               </div>
             )}

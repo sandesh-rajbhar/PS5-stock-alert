@@ -38,6 +38,7 @@ const slugFromUrl = (url: string) => url.split('/product/')[1] ?? '';
 interface FyndSize {
   is_available?: boolean;
   quantity?: number;
+  value?: string;
 }
 
 export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = {}): Promise<ScrapeResult> {
@@ -72,9 +73,29 @@ export async function scrapeRelianceDigital(pincode: string, opts: ScrapeOpts = 
         if (!data || typeof data.sellable !== 'boolean') return;
 
         const sizes: FyndSize[] = Array.isArray(data.sizes) ? data.sizes : [];
-        const inStock = data.sellable && sizes.some(s => s.is_available && (s.quantity ?? 0) > 0);
+        const nationalStock = data.sellable && sizes.some(s => s.is_available && (s.quantity ?? 0) > 0);
 
-        const effective = data.price?.effective?.min;
+        // sizes/ reflects NATIONAL stock (identical for every pincode). The
+        // v3.0 price endpoint is the pincode gate: 200 = deliverable, 400
+        // {"is_serviceable": false} = not deliverable to this pincode.
+        let inStock = false;
+        let pincodePrice: number | undefined;
+        if (nationalStock) {
+          const size = encodeURIComponent(sizes.find(s => s.is_available)?.value ?? 'OS');
+          const priceRes = await fetchWithTimeout(
+            `https://www.reliancedigital.in/api/service/application/catalog/v3.0/products/${slug}/sizes/${size}/price/?pincode=${pincode}`,
+            { headers },
+            12000
+          );
+          if (priceRes.ok) {
+            const priceData = await priceRes.json();
+            inStock = true;
+            const eff = priceData?.price?.effective ?? priceData?.price_per_piece?.effective;
+            if (typeof eff === 'number') pincodePrice = eff;
+          }
+        }
+
+        const effective = pincodePrice ?? data.price?.effective?.min;
         const price = typeof effective === 'number' ? `₹${Math.round(effective).toLocaleString('en-IN')}` : null;
         const title = nameFromUrl(url);
 
