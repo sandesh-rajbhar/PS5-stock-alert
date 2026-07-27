@@ -23,6 +23,7 @@ const ALL_PRODUCT_URLS = [
   'https://www.flipkart.com/sony-cfi-2008a01-1024-gb-ea-sports-fc-26-full-game-voucher-astros-playroom/p/itm0ac20e91053e3',
   'https://www.flipkart.com/sony-playstation5-digital-edition-slim-cfi-2008b01x-cfi-2116b01y-1-tb/p/itm6b0a91231fb2f',
   'https://www.flipkart.com/sony-playstation5-console-slim-cfi-2008a01x-cfi-2116a01y-1-tb/p/itm89489e2adcd2c',
+  'https://www.flipkart.com/sony-ps5-console-cfi-2116a01y-1024-gb-astros-playroom/p/itmd38e3aba0e54b',
 ];
 
 interface ListingAvailability {
